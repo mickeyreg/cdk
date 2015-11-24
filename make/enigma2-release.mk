@@ -681,8 +681,8 @@ release_enigma2_adb5800: release_enigma2_common_utils
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/adb_box_fan/fan_ctrl.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_adb_box/cec_ctrl.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/smartcard_nbox/smartcard.ko $(prefix)/release/lib/modules/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
+#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
+#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
 	mkdir -p $(prefix)/release/lib/modules/crypto
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto/*.ko $(prefix)/release/lib/modules/crypto/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko $(prefix)/release/lib/modules/crypto/
