@@ -1,0 +1,1705 @@
+diff -Nur linux-sh4-orig/arch/sh/boards/mach-mb442/mach.c linux-sh4/arch/sh/boards/mach-mb442/mach.c
+--- linux-sh4-orig/arch/sh/boards/mach-mb442/mach.c	Thu Jul 02 06:47:03 2015
++++ linux-sh4/arch/sh/boards/mach-mb442/mach.c	Wed Jul 08 12:38:22 2015
+@@ -43,10 +43,10 @@
+ 	/* Set the ILC to route external interrupts to the the INTC */
+ 	/* Outputs 0-3 are the interrupt pins, 4-7 are routed to the INTC */
+ 	/* Inputs sys-irq2 and 3 are unused (pulled high) */
+-	ilc_route_external(ILC_EXT_IRQ0, 4, 0);		/* SMC Ethernet */
++//	ilc_route_external(ILC_EXT_IRQ0, 4, 0);		/* SMC Ethernet */
+ 	ilc_route_external(ILC_EXT_IRQ1, 5, 0);		/* ATA */
+-	ilc_route_external(ILC_EXT_IRQ2, 6, 0);		/* Unused */
+-	ilc_route_external(ILC_EXT_MDINT, 7, 0);	/* STe100 PHY */
++//	ilc_route_external(ILC_EXT_IRQ2, 6, 0);		/* Unused */
++//	ilc_route_external(ILC_EXT_MDINT, 7, 0);	/* STe100 PHY */
+ }
+ 
+ void __init mb442_setup(char**);
+diff -Nur linux-sh4-orig/arch/sh/boards/mach-mb442/setup.c linux-sh4/arch/sh/boards/mach-mb442/setup.c
+--- linux-sh4-orig/arch/sh/boards/mach-mb442/setup.c	Wed Jul 08 12:07:18 2015
++++ linux-sh4/arch/sh/boards/mach-mb442/setup.c	Wed Jul 08 12:38:22 2015
+@@ -18,18 +18,71 @@
+ #include <linux/delay.h>
+ #include <linux/spi/spi.h>
+ #include <linux/mtd/mtd.h>
++#include <linux/mtd/nand.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/stm/platform.h>
+ #include <linux/stm/stx7100.h>
+ #include <asm/irl.h>
++#include <linux/bpa2.h>
++#include <linux/stm/emi.h>
+ 
+ 
++const char *LMI_VID_partalias[] = { "BPA2_Region1", "coredisplay-video", "gfx-memory", "v4l2-video-buffers", "v4l2-coded-video-buffers", NULL };
++const char *LMI_SYS_partalias[] = { "BPA2_Region0", "bigphysarea", NULL };
+ 
+-#define MB442_PIO_STE100P_RESET stm_gpio(2, 4)
+-#define MB442_PIO_SMC91X_RESET stm_gpio(2, 6)
+-#define MB442_PIO_FLASH_VPP stm_gpio(2, 7)
++static struct bpa2_partition_desc bpa2_parts_table[] = {
++      {
++	      .name  = "LMI_VID",
++	      .start = 0x10800000,
++	      .size  = 0x03800000,
++	      .flags = 0,
++	      .aka   = LMI_VID_partalias
++      },
++      {
++	      .name  = "LMI_SYS",
++	      .start = 0,
++	      .size  = 0x01C00000,//0x00F00000,
++	      .flags = 0,
++	      .aka   = LMI_SYS_partalias
++      }
++};
++
++static struct mtd_partition nand_partitions[] = {
++	{
++		.name	= "rootfs",
++		.offset	= 0,
++		.size 	= 0x03c00000	//64MB
++		//.size 	= 0x07c00000	//128MB
++	}, {
++		.name	= "kernel",
++		.offset	= MTDPART_OFS_APPEND,
++		.size	= MTDPART_SIZ_FULL
++	},
++};
+ 
++static struct nand_config_data nbox_nand_config = {
++	.emi_bank		= 1,
++	.emi_withinbankoffset	= 0,
++
++	/* Timings for NAND512W3A */
++	.emi_timing_data = &(struct emi_timing_data) {
++		.rd_cycle_time	 = 40,		 /* times in ns */
++		.rd_oee_start	 = 0,
++		.rd_oee_end	 = 10,
++		.rd_latchpoint	 = 10,
++		.busreleasetime  = 0,
++
++		.wr_cycle_time	 = 40,
++		.wr_oee_start	 = 0,
++		.wr_oee_end	 = 10,
+ 
++		.wait_active_low = 0,
++	},
++
++	.chip_delay		= 35,		/* time in us */
++	.mtd_parts		= nand_partitions,
++	.nr_parts		= ARRAY_SIZE(nand_partitions),
++};
+ 
+ void __init mb442_setup(char** cmdline_p)
+ {
+@@ -40,20 +93,18 @@
+ 	stx7100_configure_asc(2, &(struct stx7100_asc_config) {
+ 			.hw_flow_control = 0,
+ 			.is_console = 1, });
+-	stx7100_configure_asc(3, &(struct stx7100_asc_config) {
+-			.hw_flow_control = 0,
+-			.is_console = 0, });
++  	bpa2_init(bpa2_parts_table, ARRAY_SIZE(bpa2_parts_table));
+ }
+ 
+ static struct resource mb442_smc91x_resources[] = {
+ 	[0] = {
+-		.start	= 0x02000300,
+-		.end	= 0x02000300 + 0xff,
++        .start  = 0x00c00300,
++        .end    = 0x00c00300+0x38000,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= IRL0_IRQ,
+-		.end	= IRL0_IRQ,
++		.start	= IRL1_IRQ,
++		.end	= IRL1_IRQ,
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -65,50 +116,8 @@
+ 	.resource	= mb442_smc91x_resources,
+ };
+ 
+-static void mb442_set_vpp(struct map_info *info, int enable)
+-{
+-	gpio_set_value(MB442_PIO_FLASH_VPP, enable);
+-}
+-
+-static struct platform_device mb442_physmap_flash = {
+-	.name		= "physmap-flash",
+-	.id		= -1,
+-	.num_resources	= 1,
+-	.resource	= (struct resource[]) {
+-		STM_PLAT_RESOURCE_MEM(0, 8*1024*1024),
+-	},
+-	.dev.platform_data = &(struct physmap_flash_data) {
+-		.width		= 2,
+-		.set_vpp	= mb442_set_vpp,
+-	},
+-};
+-
+-
+-static int mb442_phy_reset(void* bus)
+-{
+-	gpio_set_value(MB442_PIO_STE100P_RESET, 1);
+-	udelay(1);
+-	gpio_set_value(MB442_PIO_STE100P_RESET, 0);
+-	udelay(1);
+-	gpio_set_value(MB442_PIO_STE100P_RESET, 1);
+-
+-	return 1;
+-}
+-
+-#define STMMAC_PHY_ADDR 14
+-static int stmmac_phy_irqs[PHY_MAX_ADDR] = {
+-	[STMMAC_PHY_ADDR] = IRL3_IRQ,
+-};
+-static struct stmmac_mdio_bus_data stmmac_mdio_bus = {
+-	.bus_id = 0,
+-	.phy_reset = mb442_phy_reset,
+-	.phy_mask = 1,
+-	.irqs = stmmac_phy_irqs,
+-};
+-
+ static struct platform_device *mb442_devices[] __initdata = {
+ 	&mb442_smc91x_device,
+-	&mb442_physmap_flash,
+ };
+ 
+ static int __init mb442_device_init(void)
+@@ -120,8 +129,7 @@
+ 			.out1_enabled = 1, });
+ 
+ 	stx7100_configure_ssc_i2c(0);
+-	stx7100_configure_ssc_spi(1, NULL);
+-	stx7100_configure_ssc_i2c(2);
++	stx7100_configure_ssc_i2c(1);
+ 
+ 	stx7100_configure_usb();
+ 
+@@ -130,32 +138,7 @@
+ 			.tx_enabled = 0,
+ 			.tx_od_enabled = 0, });
+ 
+-	stx7100_configure_pata(&(struct stx7100_pata_config) {
+-			.emi_bank = 3,
+-			.pc_mode = 1,
+-			.irq = IRL1_IRQ, });
+-
+-	gpio_request(MB442_PIO_FLASH_VPP, "Flash VPP");
+-	gpio_direction_output(MB442_PIO_FLASH_VPP, 0);
+-
+-	gpio_request(MB442_PIO_STE100P_RESET, "STE100P reset");
+-	gpio_direction_output(MB442_PIO_STE100P_RESET, 1);
+-
+-	stx7100_configure_ethernet(&(struct stx7100_ethernet_config) {
+-			.mode = stx7100_ethernet_mode_mii,
+-			.ext_clk = 0,
+-			.phy_bus = 0,
+-			.phy_addr = STMMAC_PHY_ADDR,
+-			.mdio_bus_data = &stmmac_mdio_bus,
+-		});
+-
+-	/* Reset the SMSC 91C111 Ethernet chip */
+-	gpio_request(MB442_PIO_SMC91X_RESET, "SMC91x reset");
+-	gpio_direction_output(MB442_PIO_SMC91X_RESET, 0);
+-	udelay(1);
+-	gpio_set_value(MB442_PIO_SMC91X_RESET, 1);
+-	udelay(1);
+-	gpio_set_value(MB442_PIO_SMC91X_RESET, 0);
++	stx7100_configure_nand(&nbox_nand_config);
+ 
+ 	return platform_add_devices(mb442_devices,
+ 			ARRAY_SIZE(mb442_devices));
+diff -Nur linux-sh4-orig/drivers/ata/sata_stm.c linux-sh4/drivers/ata/sata_stm.c
+--- linux-sh4-orig/drivers/ata/sata_stm.c	Mon Jul 06 08:24:34 2015
++++ linux-sh4/drivers/ata/sata_stm.c	Wed Jul 08 12:38:59 2015
+@@ -946,7 +946,7 @@
+ 	return IRQ_RETVAL(handled);
+ }
+ 
+-static irqreturn_t stm_sata_interrupt(int irq, void *dev_instance)
++static irqreturn_t __stm_sata_interrupt(int irq, void *dev_instance)
+ {
+ 	struct ata_host *host = dev_instance;
+ 	unsigned int handled = 0;
+@@ -968,6 +968,77 @@
+ 	return IRQ_RETVAL(handled);
+ }
+ 
++//fix freebox 19.10.2011
++static irqreturn_t stm_sata_interrupt(int irq, void *dev_instance)
++{
++	struct ata_host *host = dev_instance;
++	unsigned int handled = 0;
++	unsigned int i;
++	unsigned long flags;
++
++DPRINTK("ENTER\n");
++
++	spin_lock(&host->lock);
++
++	for (i = 0; i < host->n_ports; i++) {
++		struct ata_port *ap = host->ports[i];
++		void __iomem *mmio = ap->ioaddr.cmd_addr;
++
++		if (readl(mmio + DMAC_STATUSTFR) & 1) {
++			/* DMA Transfer complete update soft S/G */
++			struct stm_port_priv *pp = ap->private_data;
++
++			/* Ack the interrupt */
++			writel(1<<0, mmio + DMAC_CLEARTFR);
++
++			DPRINTK("softsg_node %p, end %p\n", pp->softsg_node, pp->softsg_end);
++
++			writel(pp->softsg_node->sar, mmio + DMAC_SAR0);
++			writel(pp->softsg_node->dar, mmio + DMAC_DAR0);
++
++			writel(pp->softsg_node->ctl0, mmio + DMAC_CTL0_0);
++			writel(pp->softsg_node->ctl1, mmio + DMAC_CTL0_1);
++
++			if (pp->softsg_node != pp->softsg_end) {
++				pp->softsg_node++;
++			} else {
++				writel(1<<8 | 0<<0, mmio + DMAC_MASKTFR);
++			}
++
++			writel((1<<8) | (1<<0), mmio + DMAC_ChEnReg);
++		} else
++		if (readl(mmio + DMAC_RAWERR) & 1) {
++			printk("DMA error asserted\n");
++		} else
++		if (readl(mmio + SATA_INTPR) & (SATA_INT_ERR)) {
++			/* Error code set in SError */
++			if (print_error) {
++				printk("SError\n");
++//				printk("%s: SStatus 0x%08x, SError 0x%08x\n", __FUNCTION__,
++	//			       stm_sata_scr_read(ap, SCR_STATUS),
++		//		       stm_sata_scr_read(ap, SCR_ERROR));
++			}
++			error_count++;
++			stm_sata_scr_write(ap, SCR_ERROR, -1);
++			handled = 1;
++		} else
++		if (ap && (!(ap->flags & ATA_FLAG_DISABLED))) {
++			struct ata_queued_cmd *qc;
++			struct stm_port_priv *pp = ap->private_data;
++
++			qc = ata_qc_from_tag(ap, pp->active_link->active_tag);
++			if (qc && (!(qc->tf.ctl & ATA_NIEN)))
++				handled += ata_sff_host_intr(ap, qc);
++		}
++
++	}
++
++	spin_unlock(&host->lock);
++
++	return IRQ_RETVAL(handled);
++}
++
++
+ static void stm_irq_clear(struct ata_port *ap)
+ {
+ 	/* TODO */
+@@ -1117,7 +1188,8 @@
+ 
+ static const struct ata_port_info stm_port_info = {
+ 	.flags		= ATA_FLAG_SATA | ATA_FLAG_NO_LEGACY |
+-			  ATA_FLAG_MMIO | ATA_FLAG_SATA_RESET | ATA_FLAG_PMP,
++//			  ATA_FLAG_MMIO | ATA_FLAG_SATA_RESET | ATA_FLAG_PMP,
++			  ATA_FLAG_MMIO | ATA_FLAG_SATA_RESET,
+ 	.pio_mask	= 0x1f, /* pio0-4 */
+ 	.mwdma_mask	= 0x07, /* mwdma0-2 */
+ 	.udma_mask	= ATA_UDMA6,
+@@ -1178,6 +1250,26 @@
+ 	return 0;
+ }
+ 
++static unsigned char stm_readb(const volatile void __iomem *addr)
++{
++	return readl(addr);
++}
++
++static unsigned short stm_readw(const volatile void __iomem *addr)
++{
++	return readl(addr);
++}
++
++static void stm_writeb(unsigned char b, volatile void __iomem *addr)
++{
++	writel(b, addr);
++}
++
++static void stm_writew(unsigned short b, volatile void __iomem *addr)
++{
++	writel(b, addr);
++}
++
+ static int __devinit stm_sata_probe(struct platform_device *pdev)
+ {
+ 	struct stm_plat_sata_data *sata_private_info = pdev->dev.platform_data;
+@@ -1211,6 +1303,9 @@
+ 	if (!hpriv->device_state)
+ 		return -EBUSY;
+ 
++	if (!hpriv->device_state)
++		return -EBUSY; 
++
+ 	mem_res = platform_get_resource(pdev,IORESOURCE_MEM,0);
+ 	phys_base = mem_res->start;
+ 	phys_size = mem_res->end - mem_res->start + 1;
+@@ -1251,9 +1346,11 @@
+ 	       hpriv->softsg ? "soft" : "hard");
+ 
+ 	if (sata_private_info->only_32bit) {
+-		printk(KERN_ERR DRV_NAME " hardware doesn't support "
+-			"byte/long ops, giving up\n");
+-		return -EINVAL;
++		printk(KERN_DEBUG DRV_NAME " forcing all byte/word ops to long\n");
++		stm_ops.readb = stm_readb;
++		stm_ops.readw = stm_readw;
++		stm_ops.writeb = stm_writeb;
++		stm_ops.writew = stm_writew;
+ 	}
+ 
+ 	sata_rev = readl(mmio_base + SATA_VERSIONR);
+@@ -1283,10 +1380,10 @@
+ 	 * host controller interrupt lines separated out. So if we have two
+ 	 * irq resources, then it is one of these
+ 	 */
+-
++/* fix freebox 19.10.2011
+ 	dma_irq = platform_get_irq(pdev, 1);
+ 	if (dma_irq > 0) {
+-		/* We have two interrupts */
++		// We have two interrupts
+ 		if (devm_request_irq(host->dev, dma_irq, stm_sata_dma_interrupt,
+ 				     0, dev_driver_string(host->dev), host) < 0)
+ 			panic("Cannot register SATA dma interrupt %d\n",
+@@ -1295,20 +1392,20 @@
+ 	} else {
+ 		hpriv->shared_dma_host_irq = 1;
+ 	}
+-
++*/
+ 	ret = ata_host_activate(host, platform_get_irq(pdev, 0),
+ 				stm_sata_interrupt,
+ 				IRQF_SHARED, &stm_sht);
+ 
+ 	if (ret && dma_irq > 0)
+ 		devm_free_irq(host->dev, dma_irq, host);
+-	else {
+-		/* by default the device is on */
++/*	else {
++		// by default the device is on 
+ 		pm_runtime_set_active(&pdev->dev);
+ 		pm_suspend_ignore_children(&pdev->dev, 1);
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+-
++*/
+ 	return ret;
+ 
+ }
+@@ -1472,7 +1569,7 @@
+ 	.driver = {
+ 		.name = DRV_NAME,
+ 		.owner = THIS_MODULE,
+-		.pm = &stm_sata_pm,
++		//.pm = &stm_sata_pm,
+ 	},
+ 	.probe = stm_sata_probe,
+ 	.remove = stm_sata_remove,
+diff -Nur linux-sh4-orig/drivers/char/lirc/lirc_stm.c linux-sh4/drivers/char/lirc/lirc_stm.c
+--- linux-sh4-orig/drivers/char/lirc/lirc_stm.c	Wed Jul 08 12:07:19 2015
++++ linux-sh4/drivers/char/lirc/lirc_stm.c	Wed Jul 08 12:39:00 2015
+@@ -877,7 +877,7 @@
+ 	rx.error = 0;
+ 	rx.off_rbuf = 0;
+ 	rx.sumUs = 0;
+-	memset(rx.rbuf, 0, LIRC_STM_BUFSIZE);
++	memset(rx.rbuf, 0, LIRC_STM_BUFSIZE*4);
+ }
+ 
+ static void lirc_stm_rx_interrupt(int irq, void *dev_id)
+@@ -930,6 +930,8 @@
+ 		 * pulse and symbol time length, both of 1us. We ignore this.
+ 		 */
+ 		if ((mark > 2) && (symbol > 1)) {
++			
++			//pr_info(LIRC_STM_NAME ":1\n");
+ 			/* Make fine adjustments to timings */
+ 			symbol -= mark;	/* to get space timing */
+ 			symbol *= rx.symbol_mult;
+@@ -949,7 +951,14 @@
+ 			rx.sumUs += mark + symbol;
+ 			rx.off_rbuf++;
+ 
++
++			//pr_info(LIRC_STM_NAME ":2\n");
++
++
+ 			if (lastSymbol) {
++
++				//pr_info(LIRC_STM_NAME ":3\n");
++
+ 				/* move the entire collection into user
+ 				 * buffer if enough space, drop otherwise
+ 				 * (perhaps too crude a recovery?)
+@@ -996,6 +1005,8 @@
+ 							syncSpace = PULSE_MASK;
+ 					}
+ 
++					//pr_info(LIRC_STM_NAME ":4\n");
++
+ 					_lirc_buffer_write_1
+ 					    (&lirc_stm_rbuf, (unsigned char *)
+ 					     &syncSpace);
+@@ -1034,7 +1045,7 @@
+ 
+ static irqreturn_t lirc_stm_interrupt(int irq, void *dev_id)
+ {
+-	lirc_stm_tx_interrupt(irq, dev_id);
++//	lirc_stm_tx_interrupt(irq, dev_id);
+ 	lirc_stm_rx_interrupt(irq, dev_id);
+ 
+ 	return IRQ_HANDLED;
+@@ -1371,7 +1382,7 @@
+ 	 */
+ 
+ 	if ((rx.rbuf = (lirc_t *) devm_kzalloc(dev,
+-					       LIRC_STM_BUFSIZE,
++					       (LIRC_STM_BUFSIZE*4),	//fix freebox 12.01.2012
+ 					       GFP_KERNEL)) == NULL)
+ 		return -ENOMEM;
+ 
+diff -Nur linux-sh4-orig/drivers/mtd/nand/plat_nand.c linux-sh4/drivers/mtd/nand/plat_nand.c
+--- linux-sh4-orig/drivers/mtd/nand/plat_nand.c	Thu Jul 02 06:47:06 2015
++++ linux-sh4/drivers/mtd/nand/plat_nand.c	Wed Jul 08 12:39:00 2015
+@@ -16,6 +16,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/nand.h>
+ #include <linux/mtd/partitions.h>
++#include <linux/stm/pio.h>
+ 
+ struct plat_nand_data {
+ 	struct nand_chip	chip;
+@@ -63,15 +64,20 @@
+ 
+ 	data->mtd.name = dev_name(&pdev->dev);
+ 
+-	data->chip.IO_ADDR_R = data->io_base;
+-	data->chip.IO_ADDR_W = data->io_base;
++//	data->chip.IO_ADDR_R = data->io_base;
++//	data->chip.IO_ADDR_W = data->io_base;
++
++	data->chip.IO_ADDR_R = (void __iomem *)data->io_base;
++	data->chip.IO_ADDR_W = (void __iomem *)(data->io_base + 0x400000);
++
+ 	data->chip.cmd_ctrl = pdata->ctrl.cmd_ctrl;
+ 	data->chip.dev_ready = pdata->ctrl.dev_ready;
+ 	data->chip.select_chip = pdata->ctrl.select_chip;
+ 	data->chip.write_buf = pdata->ctrl.write_buf;
+ 	data->chip.read_buf = pdata->ctrl.read_buf;
+ 	data->chip.chip_delay = pdata->chip.chip_delay;
+-	data->chip.options |= pdata->chip.options;
++//	data->chip.options |= pdata->chip.options;
++	data->chip.options |= NAND_NO_AUTOINCR;
+ 
+ 	data->chip.read_buf = pdata->ctrl.read_buf;
+ 	data->chip.write_buf = pdata->ctrl.write_buf;
+diff -Nur linux-sh4-orig/drivers/net/usb/mcs7830.c linux-sh4/drivers/net/usb/mcs7830.c
+--- linux-sh4-orig/drivers/net/usb/mcs7830.c	Thu Jul 02 06:47:07 2015
++++ linux-sh4/drivers/net/usb/mcs7830.c	Wed Jul 08 12:39:00 2015
+@@ -335,7 +335,7 @@
+ {
+ 	int ret;
+ 	int retry;
+-
++msleep(100);
+ 	/* Read MAC address from EEPROM */
+ 	ret = -EINVAL;
+ 	for (retry = 0; retry < 5 && ret; retry++)
+diff -Nur linux-sh4-orig/drivers/net/smc91x.c linux-sh4/drivers/net/smc91x.c
+--- linux-sh4-orig/drivers/net/smc91x.c	Thu Jul 02 06:47:06 2015
++++ linux-sh4/drivers/net/smc91x.c	Wed Jul 08 12:39:00 2015
+@@ -349,7 +349,9 @@
+ 	SMC_SET_MAC_ADDR(lp, dev->dev_addr);
+ 
+ 	/* now, enable interrupts */
+-	mask = IM_EPH_INT|IM_RX_OVRN_INT|IM_RCV_INT;
++	//mask = IM_EPH_INT|IM_RX_OVRN_INT|IM_RCV_INT;
++	mask = IM_ERCV_INT|IM_ALLOC_INT|IM_RCV_INT | IM_MDINT; // d-mon
++
+ 	if (lp->version >= (CHIP_91100 << 4))
+ 		mask |= IM_MDINT;
+ 	SMC_SELECT_BANK(lp, 2);
+@@ -1117,6 +1119,7 @@
+ 	 * Enable PHY Interrupts (for register 18)
+ 	 * Interrupts listed here are disabled
+ 	 */
++
+ 	smc_phy_write(dev, phyaddr, PHY_MASK_REG,
+ 		PHY_INT_LOSSSYNC | PHY_INT_CWRD | PHY_INT_SSD |
+ 		PHY_INT_ESD | PHY_INT_RPOL | PHY_INT_JAB |
+@@ -2006,7 +2009,14 @@
+ 	/* Get the MAC address */
+ 	SMC_SELECT_BANK(lp, 1);
+ 	SMC_GET_MAC_ADDR(lp, dev->dev_addr);
+-
++/*
++	dev->dev_addr[0]=0x00;
++	dev->dev_addr[1]=0x1a;
++	dev->dev_addr[2]=0xa0;
++	dev->dev_addr[3]=0xb7;
++	dev->dev_addr[4]=0xbc;
++	dev->dev_addr[5]=0x10;
++*/
+ 	/* now, reset the chip, and put it into a known state */
+ 	smc_reset(dev);
+ 
+@@ -2354,7 +2364,10 @@
+ 		ret = -ENOMEM;
+ 		goto out_release_attrib;
+ 	}
+-
++	
++	
++//	platform_set_drvdata(pdev, ndev);	//fix
++	
+ #ifdef CONFIG_ARCH_PXA
+ 	{
+ 		struct smc_local *lp = netdev_priv(ndev);
+diff -Nur linux-sh4-orig/drivers/net/smc91x.h linux-sh4/drivers/net/smc91x.h
+--- linux-sh4-orig/drivers/net/smc91x.h	Thu Jul 02 06:47:06 2015
++++ linux-sh4/drivers/net/smc91x.h	Wed Jul 08 12:39:00 2015
+@@ -250,7 +250,7 @@
+  * to do a SMC_outl, which on a 16 bit bus translates into two 16 bit writes.
+  * This bypasses the special logic which would prevent this also updating
+  * this interrupt mask register. */
+-#define SMC_CAN_USE_8BIT	1
++#define SMC_CAN_USE_8BIT	0 //1
+ #define SMC_CAN_USE_16BIT	1
+ #define SMC_CAN_USE_32BIT	0
+ #define SMC_CAN_USE_32BIT_DATA	1
+@@ -259,7 +259,7 @@
+ #error Unknown board
+ #endif
+ 
+-#define SMC_NOWAIT		0
++#define SMC_NOWAIT		1	//bylo 1
+ #define SMC_IRQ_FLAGS		0
+ 
+ #ifdef SMC_STEM_BS_MASK
+@@ -277,7 +277,7 @@
+                 ( (__reg & ( SMC_STEM_BS_MASK)) >> SMC_IO_SHIFT );	\
+ 	(void __iomem *)((base) + __reg); })
+ #else
+-#define REG_OFFSET(base,reg) ((void __iomem*)((base) + (reg)))
++#define REG_OFFSET(base,reg) ((void __iomem*)((base) + (reg<<14)))
+ #endif
+ 
+ #define dprintk(str, ...) // printk(str, ## __VA_ARGS__)
+@@ -629,10 +629,10 @@
+ #endif
+ 
+ #if ! SMC_CAN_USE_8BIT
+-#define SMC_inb(ioaddr, reg)		({ BUG(); 0; })
+-#define SMC_outb(x, ioaddr, reg)	BUG()
+-#define SMC_insb(a, r, p, l)		BUG()
+-#define SMC_outsb(a, r, p, l)		BUG()
++//#define SMC_inb(ioaddr, reg)		({ BUG(); 0; })
++//#define SMC_outb(x, ioaddr, reg)	BUG()
++//#define SMC_insb(a, r, p, l)		BUG()
++//#define SMC_outsb(a, r, p, l)		BUG()
+ #endif
+ 
+ #if !defined(SMC_insb) || !defined(SMC_outsb)
+diff -Nur linux-sh4-orig/drivers/net/smsc911x.c linux-sh4/drivers/net/smsc911x.c
+--- linux-sh4-orig/drivers/net/smsc911x.c	Thu Jul 02 06:47:06 2015
++++ linux-sh4/drivers/net/smsc911x.c	Wed Jul 08 12:39:00 2015
+@@ -53,10 +53,27 @@
+ #include <linux/device.h>
+ #include "smsc911x.h"
+ 
++#define USE_DMA
++#define DMA_PACED
++#define USE_MAC_FIX
++#define MAX_RX_SKBS		16
++
++#ifdef USE_DMA
++#include <linux/stm/stm-dma.h>
++typedef unsigned long DWORD;
++#endif
++
+ #define SMSC_CHIPNAME		"smsc911x"
+ #define SMSC_MDIONAME		"smsc911x-mdio"
+ #define SMSC_DRV_VERSION	"2008-10-21"
+ 
++#ifdef USE_MAC_FIX
++#define HIBYTE(word)            ((unsigned char)(((unsigned short)(word))>>8))
++#define LOBYTE(word)            ((unsigned char)(((unsigned short)(word))&0x00FFU))
++#define HIWORD(dWord)           ((unsigned short)(((unsigned long)(dWord))>>16))
++#define LOWORD(dWord)           ((unsigned short)(((unsigned long)(dWord))&0x0000FFFFUL))
++#endif
++
+ MODULE_LICENSE("GPL");
+ MODULE_VERSION(SMSC_DRV_VERSION);
+ 
+@@ -99,7 +116,9 @@
+ 	unsigned int gpio_setting;
+ 	unsigned int gpio_orig_setting;
+ 	struct net_device *dev;
++#ifndef USE_DMA
+ 	struct napi_struct napi;
++#endif
+ 
+ 	unsigned int software_irq_signal;
+ 
+@@ -116,8 +135,188 @@
+ 	unsigned int clear_bits_mask;
+ 	unsigned int hashhi;
+ 	unsigned int hashlo;
++	
++#ifdef USE_DMA
++	struct sk_buff *RxSkbs[MAX_RX_SKBS];
++	struct scatterlist RxSgs[MAX_RX_SKBS];
++	spinlock_t TxQueueLock;
++	DWORD dwTxQueueDisableMask;
++	struct sk_buff *TxSkb;
++	DWORD dwTxDmaCh;
++	DWORD dwRxDmaCh;
++	DWORD RxSkbsCount;
++	DWORD RxDropOnCallback;
++	struct semaphore threadSem;
++#endif
+ };
+ 
++#ifdef USE_DMA
++#define MAX_TX_PIO                      200
++#define PLATFORM_CACHE_LINE_BYTES       (32UL)
++#define PLATFORM_CACHE_LINE_BYTES_M1    (31UL)
++#define PLATFORM_CACHE_LINE_BYTES_M14   (18UL)
++
++static struct stm_dma_params tx_transfer;
++
++#ifdef DMA_PACED
++#define STB7100_FDMA_REQ_SSC_1_TX 12
++#define STB7100_FDMA_REQ_SSC_2_TX 13
++#define MAX_NODELIST_LEN 30
++#define SMSC_SHORT_PTK_CHAN 1
++#define SMSC_LONG_PTK_CHAN 0
++static struct stm_dma_params rx_transfer_paced[MAX_NODELIST_LEN];
++static struct stm_dma_req_config dma_req_configs[2] = {
++{
++	/* Long packet: 4*read32 */
++	.rw             = REQ_CONFIG_READ,
++	.opcode         = REQ_CONFIG_OPCODE_32,
++	.count          = 4,
++	.increment      = 0,
++	.hold_off       = 0,
++	.initiator      = 1,
++}, {
++	/* Short packet: 1*read32 */
++	.rw             = REQ_CONFIG_READ,
++	.opcode         = REQ_CONFIG_OPCODE_32,
++	.count          = 1,
++	.increment      = 0,
++	.hold_off       = 0,
++	.initiator      = 1,
++}};
++static struct stm_dma_req *dma_reqs[2];
++#else
++static struct stm_dma_params rx_transfer_sg;
++#endif
++
++static void smsc911x_rx_fastforward(struct smsc911x_data *pdata, unsigned int pktbytes);
++static inline void smsc911x_reg_write(struct smsc911x_data *pdata, u32 reg, u32 val);
++static inline u32 smsc911x_reg_read(struct smsc911x_data *pdata, u32 reg);
++
++static void Rx_DmaCompletionCallback(void* param)
++{
++	struct smsc911x_data *pdata = param;
++	int i;
++
++	for (i = 0; i < pdata->RxSkbsCount; i++) {
++		pdata->RxSkbs[i]->dev = pdata->dev;
++		pdata->RxSkbs[i]->protocol = eth_type_trans(pdata->RxSkbs[i], pdata->dev);
++		pdata->RxSkbs[i]->ip_summed = CHECKSUM_NONE;
++		netif_rx(pdata->RxSkbs[i]);
++	}
++
++	pdata->RxSkbsCount = 0;
++
++	if (pdata->RxDropOnCallback != 0) {
++		smsc911x_rx_fastforward(pdata, pdata->RxDropOnCallback);
++	}
++
++	up(&pdata->threadSem);
++}
++
++inline void Tx_StopQueue(struct smsc911x_data *pdata, DWORD dwSource)
++{
++	DWORD intFlags=0;
++	spin_lock_irqsave(&(pdata->TxQueueLock), intFlags);
++	if(pdata->dwTxQueueDisableMask == 0)
++		netif_stop_queue(pdata->dev);
++	pdata->dwTxQueueDisableMask |= dwSource;
++	spin_unlock_irqrestore(&(pdata->TxQueueLock), intFlags);
++}
++
++inline void Tx_WakeQueue(struct smsc911x_data *pdata, DWORD dwSource)
++{
++	DWORD intFlags=0;
++	spin_lock_irqsave(&(pdata->TxQueueLock), intFlags);
++	pdata->dwTxQueueDisableMask &= (~dwSource);
++	if(pdata->dwTxQueueDisableMask == 0)
++		netif_wake_queue(pdata->dev);
++	spin_unlock_irqrestore(&(pdata->TxQueueLock), intFlags);
++}
++
++static void Tx_DmaCompletionCallback(void* param)
++{
++	struct smsc911x_data *pdata = param;
++
++	dev_kfree_skb_irq(pdata->TxSkb);
++	pdata->dev->trans_start = jiffies;
++	pdata->TxSkb = NULL;
++	Tx_WakeQueue(pdata, 0x02);
++}
++
++static void err_cb(unsigned long dummy)
++{
++	printk("[smsc911x.c] DMA ERROR");
++}
++
++static DWORD smsc911x_request_dma(const char* cap)
++{
++	int chan;
++	const char * dmac_id[] = { STM_DMAC_ID, NULL };
++	const char * cap_channel[] = { cap, NULL };
++
++	chan = request_dma_bycap(dmac_id, cap_channel, "smsc911x");
++	return chan;
++}
++
++#ifdef DMA_PACED
++void Platform_DmaInitialize_sg(int chan)
++{
++	int i;
++	int dma_req_lines[2];
++
++	dma_req_lines[SMSC_LONG_PTK_CHAN] = STB7100_FDMA_REQ_SSC_1_TX;
++	dma_req_lines[SMSC_SHORT_PTK_CHAN] = STB7100_FDMA_REQ_SSC_2_TX;
++
++	dma_reqs[0] = dma_req_config(chan, dma_req_lines[0], &dma_req_configs[0]);
++	dma_reqs[1] = dma_req_config(chan, dma_req_lines[1], &dma_req_configs[1]);
++
++	for(i=0;i<MAX_NODELIST_LEN;i++){
++		dma_params_init(&rx_transfer_paced[i], MODE_PACED, STM_DMA_LIST_OPEN);
++		dma_params_DIM_0_x_1(&rx_transfer_paced[i]);
++	}
++	dma_params_err_cb(&rx_transfer_paced[0], err_cb, 0, STM_DMA_CB_CONTEXT_TASKLET);
++}
++#else
++void Platform_DmaInitialize_sg(int chan)
++{
++	dma_params_init(&rx_transfer_sg, MODE_DST_SCATTER, STM_DMA_LIST_OPEN);
++	dma_params_err_cb(&rx_transfer_sg, err_cb, 0, STM_DMA_CB_CONTEXT_TASKLET);
++	dma_params_DIM_1_x_1(&rx_transfer_sg);
++}
++#endif
++
++void Platform_DmaInitialize(void)
++{
++	dma_params_init(&tx_transfer, MODE_FREERUNNING, STM_DMA_LIST_OPEN);
++	dma_params_err_cb(&tx_transfer, err_cb, 0, STM_DMA_CB_CONTEXT_TASKLET);
++	dma_params_DIM_1_x_2(&tx_transfer, 0x20, 0);
++}
++
++#ifdef DMA_PACED
++void Platform_DmaRelease_sg(DWORD dwDmaChannel)
++{
++	int i;
++
++	free_dma(dwDmaChannel);
++	for(i=0;i<MAX_NODELIST_LEN;i++)
++		dma_params_free(&rx_transfer_paced[i]);
++}
++#else
++void Platform_DmaRelease_sg(DWORD dwDmaChannel)
++{
++	free_dma(dwDmaChannel);
++	dma_params_free(&rx_transfer_sg);
++}
++#endif
++
++void Platform_DmaRelease(DWORD dwDmaChannel)
++{
++	free_dma(dwDmaChannel);
++	dma_params_free(&tx_transfer);
++}
++#endif
++
++
+ static inline u32 __smsc911x_reg_read(struct smsc911x_data *pdata, u32 reg)
+ {
+ 	if (pdata->config.flags & SMSC911X_USE_32BIT)
+@@ -211,21 +410,34 @@
+ 
+ 	spin_lock_irqsave(&pdata->dev_lock, flags);
+ 
++#ifdef USE_DMA
++	smsc911x_reg_write(pdata, RX_CFG, 0x00000200);
++#endif
++
+ 	if (pdata->config.flags & SMSC911X_SWAP_FIFO) {
+ 		while (wordcount--)
+ 			*buf++ = swab32(__smsc911x_reg_read(pdata,
+ 							    RX_DATA_FIFO));
++#ifdef USE_DMA
++		smsc911x_reg_write(pdata, RX_CFG, 0x80001200);
++#endif
+ 		goto out;
+ 	}
+ 
+ 	if (pdata->config.flags & SMSC911X_USE_32BIT) {
+ 		readsl(pdata->ioaddr + RX_DATA_FIFO, buf, wordcount);
++#ifdef USE_DMA
++		smsc911x_reg_write(pdata, RX_CFG, 0x80001200);
++#endif
+ 		goto out;
+ 	}
+ 
+ 	if (pdata->config.flags & SMSC911X_USE_16BIT) {
+ 		while (wordcount--)
+ 			*buf++ = __smsc911x_reg_read(pdata, RX_DATA_FIFO);
++#ifdef USE_DMA
++		smsc911x_reg_write(pdata, RX_CFG, 0x80001200);
++#endif
+ 		goto out;
+ 	}
+ 
+@@ -985,11 +1197,147 @@
+ 				"RX FFWD to finish, RX_DP_CTRL: 0x%08X", val);
+ 	} else {
+ 		unsigned int temp;
++#ifdef USE_DMA
++		smsc911x_reg_write(pdata, RX_CFG, 0x00000200);
++#endif
+ 		while (pktwords--)
+ 			temp = smsc911x_reg_read(pdata, RX_DATA_FIFO);
++#ifdef USE_DMA
++		smsc911x_reg_write(pdata, RX_CFG, 0x80001200);
++#endif
+ 	}
+ }
+ 
++#ifdef USE_DMA
++static int smsc911x_poll_thread(void *user_data)
++{
++	struct smsc911x_data *pdata = user_data;
++	struct net_device *dev = pdata->dev;
++	int long_len, short_len, len, sg_count, npackets;
++	unsigned int rxstat, sg_len, pktlength = 0;
++	DWORD dwLanPhysAddr, sg_addr;
++	struct scatterlist *sg;
++	struct stm_dma_params *param;
++
++	daemonize ("smsc911x_rx_task");
++
++	while(1)
++	{
++		down_interruptible(&pdata->threadSem);
++		//udelay(500);
++		pdata->RxDropOnCallback = 0;
++		npackets = 0;
++
++		for (npackets = 0; (npackets < MAX_RX_SKBS) && ((rxstat = smsc911x_rx_get_rxstatus(pdata)) !=0 ); npackets++)
++		{
++			pktlength = ((rxstat & 0x3FFF0000) >> 16);
++			smsc911x_rx_counterrors(dev, rxstat);
++
++			if((rxstat & RX_STS_ES_) != 0)
++			{
++				SMSC_WARNING(RX_ERR, "Discarding packet with error bit set");
++				pdata->RxDropOnCallback = pktlength;
++				dev->stats.rx_dropped++;
++				break;
++			}
++
++			pdata->RxSkbs[npackets] = netdev_alloc_skb(dev, pktlength + 2 * PLATFORM_CACHE_LINE_BYTES);
++			if(pdata->RxSkbs[npackets] == NULL)
++			{
++				SMSC_WARNING(RX_ERR, "Unable to allocate skb for rx packet");
++				pdata->RxDropOnCallback = pktlength;
++				dev->stats.rx_dropped++;
++				break;
++			}
++
++			pdata->RxSkbs[npackets]->data = pdata->RxSkbs[npackets]->head;
++			skb_reset_tail_pointer(pdata->RxSkbs[npackets]);
++			skb_reserve(pdata->RxSkbs[npackets], PLATFORM_CACHE_LINE_BYTES_M14);
++			skb_put(pdata->RxSkbs[npackets], pktlength - 4);
++
++			sg_len = (pktlength +
++				(PLATFORM_CACHE_LINE_BYTES_M14) +
++				PLATFORM_CACHE_LINE_BYTES_M1) &
++				(~(PLATFORM_CACHE_LINE_BYTES_M1));
++			sg_set_buf(&pdata->RxSgs[npackets], pdata->RxSkbs[npackets]->head, sg_len);
++
++			/* Update counters */
++			dev->stats.rx_packets++;
++			dev->stats.rx_bytes += (pktlength - 4);
++		}
++		if (npackets != 0)
++		{
++#ifdef DMA_PACED
++			dwLanPhysAddr = PHYSADDR(pdata->ioaddr);
++			sg = pdata->RxSgs;
++			sg_count = dma_map_sg(NULL, sg, npackets, DMA_FROM_DEVICE);
++
++			param = rx_transfer_paced;
++			for ( ; sg_count; sg_count--) {
++				sg_addr = sg_dma_address(sg);
++				len = sg_dma_len(sg);
++				long_len = len & (~127);
++				short_len = len & 127;
++
++				if (long_len) {
++					dma_params_addrs(param, dwLanPhysAddr, sg_addr, long_len);
++					dma_params_req(param, dma_reqs[SMSC_LONG_PTK_CHAN]);
++					dma_params_link(param, param + 1);
++					param++;
++				}
++				if (short_len) {
++					dma_params_addrs(param, dwLanPhysAddr, sg_addr + long_len, short_len);
++					dma_params_req(param, dma_reqs[SMSC_SHORT_PTK_CHAN]);
++					dma_params_link(param, param + 1);
++					param++;
++				}
++				sg++;
++			}
++			param--;
++			dma_params_link(param, NULL);
++			dma_params_comp_cb(rx_transfer_paced,
++				(void (*)(unsigned long))Rx_DmaCompletionCallback,
++				(unsigned long)pdata, STM_DMA_CB_CONTEXT_TASKLET);
++			dma_compile_list(pdata->dwRxDmaCh, rx_transfer_paced, GFP_KERNEL);
++
++			pdata->RxSkbsCount = npackets;
++			dma_xfer_list(pdata->dwRxDmaCh, rx_transfer_paced);
++#else
++			int sg_count = dma_map_sg(NULL, pdata->RxSgs, npackets, DMA_FROM_DEVICE);
++
++			dma_params_comp_cb(&rx_transfer_sg,
++				(void (*)(unsigned long))Rx_DmaCompletionCallback,
++				(unsigned long)pdata,
++				STM_DMA_CB_CONTEXT_TASKLET);
++			dma_params_addrs(&rx_transfer_sg, (PHYSADDR(pdata->ioaddr)) + (1 << 16), 0, 0);
++			//dma_params_addrs(&rx_transfer_sg, PHYSADDR(pdata->ioaddr), 0, 0);
++			dma_params_sg(&rx_transfer_sg, pdata->RxSgs, sg_count);
++			dma_compile_list(pdata->dwRxDmaCh, &rx_transfer_sg, GFP_KERNEL);
++
++			pdata->RxSkbsCount = npackets;
++			dma_xfer_list(pdata->dwRxDmaCh, &rx_transfer_sg);
++#endif
++		}
++		else
++		{
++			//enable irq if there is no packet in the fifo or the first packet has an error
++			unsigned int temp;
++			if (pdata->RxDropOnCallback > 0)
++			{
++				SMSC_WARNING(RX_ERR, "Discarding packet with error bit set or alloc skb failed");
++				smsc911x_rx_fastforward(pdata, pktlength);
++			}
++			/* We processed all packets available.
++		 	 * re-enable rx interrupts */
++			smsc911x_reg_write(pdata, INT_STS, INT_STS_RSFL_);
++			temp = smsc911x_reg_read(pdata, INT_EN);
++			temp |= INT_EN_RSFL_EN_;
++			smsc911x_reg_write(pdata, INT_EN, temp);
++		}
++	}
++	return 0;
++}
++#else
+ /* NAPI poll function */
+ static int smsc911x_poll(struct napi_struct *napi, int budget)
+ {
+@@ -1064,6 +1412,7 @@
+ 	/* Return total received packets */
+ 	return npackets;
+ }
++#endif
+ 
+ /* Returns hash bit number for given MAC address
+  * Example:
+@@ -1179,8 +1528,20 @@
+ 		return -EIO;
+ 	}
+ 
++#ifdef USE_DMA
++	// 3KB TX Buffer
++	//smsc911x_reg_write(pdata, HW_CFG, 0x00030000);
++	//smsc911x_reg_write(pdata, AFC_CFG, 0x00824190);
++	// 4KB TX Buffer
++	smsc911x_reg_write(pdata, HW_CFG, 0x00040000);
++	smsc911x_reg_write(pdata, AFC_CFG, 0x00783C90);
++	// 5KB TX Buffer
++	//smsc911x_reg_write(pdata, HW_CFG, 0x00050000);
++	//smsc911x_reg_write(pdata, AFC_CFG, 0x006E3740);
++#else
+ 	smsc911x_reg_write(pdata, HW_CFG, 0x00050000);
+ 	smsc911x_reg_write(pdata, AFC_CFG, 0x006E3740);
++#endif
+ 
+ 	/* Make sure EEPROM has finished loading before setting GPIO_CFG */
+ 	timeout = 50;
+@@ -1249,6 +1610,25 @@
+ 	dev_info(&dev->dev, "SMSC911x/921x identified at %#08lx, IRQ: %d\n",
+ 		 (unsigned long)pdata->ioaddr, dev->irq);
+ 
++#ifdef USE_DMA
++	spin_lock_init(&(pdata->TxQueueLock));
++	pdata->TxSkb = NULL;
++	pdata->dwTxQueueDisableMask = 0;
++
++	/* got dma channels */
++	pdata->dwTxDmaCh = smsc911x_request_dma(STM_DMA_CAP_LOW_BW);;
++	pdata->dwRxDmaCh = smsc911x_request_dma(STM_DMA_CAP_ETH_BUF);
++	SMSC_TRACE(IFUP, "using TX Dma Channel: %ld", pdata->dwTxDmaCh);
++	SMSC_TRACE(IFUP, "using RX Dma Channel: %ld", pdata->dwRxDmaCh);
++
++	/* init dma channels */
++	Platform_DmaInitialize_sg(pdata->dwTxDmaCh);
++	Platform_DmaInitialize();
++
++	sema_init(&pdata->threadSem, 0);
++	kernel_thread (smsc911x_poll_thread, pdata, 0);
++#endif
++
+ 	/* Reset the last known duplex and carrier */
+ 	pdata->last_duplex = -1;
+ 	pdata->last_carrier = -1;
+@@ -1267,11 +1647,17 @@
+ 	temp &= ~(FIFO_INT_RX_STS_LEVEL_);
+ 	smsc911x_reg_write(pdata, FIFO_INT, temp);
+ 
++#ifdef USE_DMA
++	/* set RX Data offset to 18 bytes for alignment */
++	/* set RX Data end alignment to 32 bytes */
++	smsc911x_reg_write(pdata, RX_CFG, 0x80001200);
++#else
+ 	/* set RX Data offset to 2 bytes for alignment */
+ 	smsc911x_reg_write(pdata, RX_CFG, (2 << 8));
+ 
+ 	/* enable NAPI polling before enabling RX interrupts */
+ 	napi_enable(&pdata->napi);
++#endif
+ 
+ 	temp = smsc911x_reg_read(pdata, INT_EN);
+ 	temp |= (INT_EN_TDFA_EN_ | INT_EN_RSFL_EN_ | INT_EN_RXSTOP_INT_EN_);
+@@ -1283,7 +1669,11 @@
+ 	smsc911x_mac_write(pdata, MAC_CR, temp);
+ 	spin_unlock_irq(&pdata->mac_lock);
+ 
++#ifdef USE_DMA
++	smsc911x_reg_write(pdata, TX_CFG, TX_CFG_TX_ON_ | TX_CFG_TXSAO_);
++#else
+ 	smsc911x_reg_write(pdata, TX_CFG, TX_CFG_TX_ON_);
++#endif
+ 
+ 	netif_start_queue(dev);
+ 	return 0;
+@@ -1302,7 +1692,9 @@
+ 
+ 	/* Stop Tx and Rx polling */
+ 	netif_stop_queue(dev);
++#ifndef USE_DMA
+ 	napi_disable(&pdata->napi);
++#endif
+ 
+ 	/* At this point all Rx and Tx activity is stopped */
+ 	dev->stats.rx_dropped += smsc911x_reg_read(pdata, RX_DROP);
+@@ -1333,35 +1725,93 @@
+ 		SMSC_WARNING(TX_ERR,
+ 			"Tx data fifo low, space available: %d", freespace);
+ 
+-	/* Word alignment adjustment */
+-	tx_cmd_a = (u32)((ulong)skb->data & 0x03) << 16;
+-	tx_cmd_a |= TX_CMD_A_FIRST_SEG_ | TX_CMD_A_LAST_SEG_;
+-	tx_cmd_a |= (unsigned int)skb->len;
+-
+-	tx_cmd_b = ((unsigned int)skb->len) << 16;
+-	tx_cmd_b |= (unsigned int)skb->len;
+-
+-	smsc911x_reg_write(pdata, TX_DATA_FIFO, tx_cmd_a);
+-	smsc911x_reg_write(pdata, TX_DATA_FIFO, tx_cmd_b);
+-
+-	bufp = (ulong)skb->data & (~0x3);
+-	wrsz = (u32)skb->len + 3;
+-	wrsz += (u32)((ulong)skb->data & 0x3);
+-	wrsz >>= 2;
+-
+-	smsc911x_tx_writefifo(pdata, (unsigned int *)bufp, wrsz);
+-	freespace -= (skb->len + 32);
+-	dev_kfree_skb(skb);
+-	dev->trans_start = jiffies;
++#ifdef USE_DMA
++	if(skb->len > MAX_TX_PIO)
++	{
++		DWORD skb32start=(((DWORD)(skb->data)) & (PLATFORM_CACHE_LINE_BYTES_M1));
++
++		DWORD *pdwBuf=(DWORD *)(((DWORD)(skb->data)) & (~(PLATFORM_CACHE_LINE_BYTES_M1)));
++		DWORD dwDwCnt=((((DWORD)(skb->len)) +
++			(PLATFORM_CACHE_LINE_BYTES_M1) +
++			(skb32start)) &
++			(~(PLATFORM_CACHE_LINE_BYTES_M1)));
++
++		__flush_purge_region((void *)pdwBuf, dwDwCnt);
++
++		smsc911x_reg_write(pdata, TX_DATA_FIFO,
++			(0x02UL << 24) |                   //32 byte end alignment
++			((skb32start) << 16) |
++			TX_CMD_A_FIRST_SEG_ |
++			TX_CMD_A_LAST_SEG_ |
++			((unsigned int)(skb->len)));
++
++		smsc911x_reg_write(pdata, TX_DATA_FIFO, 
++			(((unsigned int)(skb->len)) << 16) |
++			((unsigned int)(skb->len)));
++
++		Tx_StopQueue(pdata, 0x02);
++		dma_params_comp_cb(&tx_transfer,
++			(void (*)(unsigned long))Tx_DmaCompletionCallback,
++			(unsigned long)pdata,
++			STM_DMA_CB_CONTEXT_TASKLET);
++
++		dma_params_addrs(&tx_transfer,
++			PHYSADDR(pdwBuf),
++			PHYSADDR(pdata->ioaddr + TX_DATA_FIFO),
++			dwDwCnt);
++
++		dma_compile_list(pdata->dwTxDmaCh, &tx_transfer, GFP_KERNEL);
++
++		pdata->TxSkb = skb;
++		freespace -= (skb->len + 32);
++
++		dma_xfer_list(pdata->dwTxDmaCh, &tx_transfer);
++	}
++	else
++	{
++#endif
++		bufp = (ulong)skb->data & (~0x3);
++		wrsz = (u32)skb->len + 3;
++		wrsz += (u32)((ulong)skb->data & 0x3);
++		wrsz >>= 2;
++
++	        /* Word alignment adjustment */
++		tx_cmd_a = (u32)((ulong)skb->data & 0x03) << 16;
++		tx_cmd_a |= TX_CMD_A_FIRST_SEG_ | TX_CMD_A_LAST_SEG_;
++		tx_cmd_a |= (unsigned int)skb->len;
++
++		tx_cmd_b = ((unsigned int)skb->len) << 16;
++		tx_cmd_b |= (unsigned int)skb->len;
++
++		smsc911x_reg_write(pdata, TX_DATA_FIFO, tx_cmd_a);
++		smsc911x_reg_write(pdata, TX_DATA_FIFO, tx_cmd_b);
++
++		smsc911x_tx_writefifo(pdata, (unsigned int *)bufp, wrsz);
++
++		freespace -= (skb->len + 32);
++		dev_kfree_skb(skb);
++		dev->trans_start = jiffies;
++#ifdef USE_DMA
++	}
++#endif
+ 
+ 	if (unlikely(smsc911x_tx_get_txstatcount(pdata) >= 30))
+ 		smsc911x_tx_update_txcounters(dev);
+ 
+ 	if (freespace < TX_FIFO_LOW_THRESHOLD) {
++#ifdef USE_DMA
++		Tx_StopQueue(pdata, 0x01);
++#else
+ 		netif_stop_queue(dev);
++#endif
+ 		temp = smsc911x_reg_read(pdata, FIFO_INT);
+ 		temp &= 0x00FFFFFF;
+-		temp |= 0x32000000;
++		// for 3KB TX Buffer
++		//temp |= 0x14000000;
++		// for 4KB TX Buffer
++		temp |= 0x23000000;
++		// for 5KB TX Buffer
++		//temp |= 0x32000000;
+ 		smsc911x_reg_write(pdata, FIFO_INT, temp);
+ 	}
+ 
+@@ -1495,7 +1945,11 @@
+ 		temp |= FIFO_INT_TX_AVAIL_LEVEL_;
+ 		smsc911x_reg_write(pdata, FIFO_INT, temp);
+ 		smsc911x_reg_write(pdata, INT_STS, INT_STS_TDFA_);
++#ifdef USE_DMA
++		Tx_WakeQueue(pdata, 0x01);
++#else
+ 		netif_wake_queue(dev);
++#endif
+ 		serviced = IRQ_HANDLED;
+ 	}
+ 
+@@ -1506,6 +1960,14 @@
+ 	}
+ 
+ 	if (likely(intsts & inten & INT_STS_RSFL_)) {
++#ifdef USE_DMA
++		// Disable Rx interrupts
++		temp = smsc911x_reg_read(pdata, INT_EN);
++		temp &= (~INT_EN_RSFL_EN_);
++		smsc911x_reg_write(pdata, INT_EN, temp);
++		// aktivate poll thread
++		up(&pdata->threadSem);
++#else
+ 		if (likely(napi_schedule_prep(&pdata->napi))) {
+ 			/* Disable Rx interrupts */
+ 			temp = smsc911x_reg_read(pdata, INT_EN);
+@@ -1517,6 +1979,7 @@
+ 			SMSC_WARNING(RX_ERR,
+ 				"napi_schedule_prep failed");
+ 		}
++#endif
+ 		serviced = IRQ_HANDLED;
+ 	}
+ 
+@@ -1916,7 +2379,10 @@
+ 
+ 	ether_setup(dev);
+ 	dev->flags |= IFF_MULTICAST;
++
++#ifndef USE_DMA
+ 	netif_napi_add(dev, &pdata->napi, smsc911x_poll, SMSC_NAPI_WEIGHT);
++#endif
+ 	dev->netdev_ops = &smsc911x_netdev_ops;
+ 	dev->ethtool_ops = &smsc911x_ethtool_ops;
+ 
+@@ -1943,9 +2409,15 @@
+ 	mdiobus_unregister(pdata->mii_bus);
+ 	mdiobus_free(pdata->mii_bus);
+ 
++#ifdef USE_DMA
++	Platform_DmaRelease(pdata->dwTxDmaCh);
++	Platform_DmaRelease_sg(pdata->dwRxDmaCh);
++#endif
++
+ 	platform_set_drvdata(pdev, NULL);
+ 	unregister_netdev(dev);
+ 	free_irq(dev->irq, dev);
++
+ 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
+ 					   "smsc911x-memory");
+ 	if (!res)
+@@ -2093,11 +2565,29 @@
+ 			SMSC_TRACE(PROBE,
+ 				"Mac Address is read from LAN911x EEPROM");
+ 		} else {
++#ifdef USE_MAC_FIX
++			unsigned long dwHigh16=readl(0xb9001000);
++			unsigned long dwLow32=readl(0xb9001004);
++			//unsigned long dwHigh16=0x00000070;
++			//unsigned long dwLow32=0x110F8000;
++
++			dev->dev_addr[0]=LOBYTE(LOWORD(dwLow32));
++			dev->dev_addr[1]=HIBYTE(LOWORD(dwLow32));
++			dev->dev_addr[2]=LOBYTE(HIWORD(dwLow32));
++			dev->dev_addr[3]=HIBYTE(HIWORD(dwLow32));
++			dev->dev_addr[4]=LOBYTE(LOWORD(dwHigh16));
++			dev->dev_addr[5]=HIBYTE(LOWORD(dwHigh16));
++#else
+ 			/* eeprom values are invalid, generate random MAC */
+ 			random_ether_addr(dev->dev_addr);
++#endif
+ 			smsc911x_set_hw_mac_address(pdata, dev->dev_addr);
+ 			SMSC_TRACE(PROBE,
++#ifdef USE_MAC_FIX
++				"MAC Address is set to STx710x Chip ID");
++#else
+ 				"MAC Address is set to random_ether_addr");
++#endif
+ 		}
+ 	}
+ 
+diff -Nur linux-sh4-orig/drivers/stm/stx7100.c linux-sh4/drivers/stm/stx7100.c
+--- linux-sh4-orig/drivers/stm/stx7100.c	Wed Jul 08 12:07:19 2015
++++ linux-sh4/drivers/stm/stx7100.c	Wed Jul 08 12:39:00 2015
+@@ -26,6 +26,9 @@
+ #include <linux/stm/stx7100.h>
+ #include <asm/irq-ilc.h>
+ 
++#include <linux/mtd/nand.h>
++#include <linux/mtd/partitions.h>
++#include <linux/stm/pio.h>
+ 
+ 
+ /* EMI resources ---------------------------------------------------------- */
+@@ -124,15 +127,137 @@
+ 
+ 
+ 
++/* NAND Resources ---------------------------------------------------------- */
++static void nand_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
++{
++	struct nand_chip *this = mtd->priv;
++
++	if (ctrl & NAND_CTRL_CHANGE) {
++
++		if (ctrl & NAND_CLE)
++			this->IO_ADDR_W = (void *)
++				((unsigned int)this->IO_ADDR_W |
++				 (unsigned int)(1 << 17));
++		else
++			this->IO_ADDR_W = (void *)
++				((unsigned int)this->IO_ADDR_W &
++				 ~(unsigned int)(1 << 17));
++
++		if (ctrl & NAND_ALE)
++			this->IO_ADDR_W = (void *)
++				((unsigned int)this->IO_ADDR_W |
++				 (unsigned int)(1 << 16));
++		else
++			this->IO_ADDR_W = (void *)
++				((unsigned int)this->IO_ADDR_W &
++				 ~(unsigned int)(1 << 16));
++	}
++
++	if (ctrl & NAND_NCE)
++		stpio_request_set_pin(3,6,"nandready",STPIO_OUT,0);
++
++	if (cmd != NAND_CMD_NONE)
++		writeb(cmd, this->IO_ADDR_W);
++}
++
++static void nand_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
++{
++	int i;
++	struct nand_chip *chip = mtd->priv;
++
++	/* write buf up to 4-byte boundary */
++	while ((unsigned int)buf & 0x3) {
++		writeb(*buf++, chip->IO_ADDR_W);
++		len--;
++	}
++
++	writesl(chip->IO_ADDR_W, buf, len/4);
++
++	/* mop up trailing bytes */
++	for (i = (len & ~0x3); i < len; i++)
++		writeb(buf[i], chip->IO_ADDR_W);
++}
++
++static void nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
++{
++	int i;
++	struct nand_chip *chip = mtd->priv;
++
++	/* read buf up to 4-byte boundary */
++	while ((unsigned int)buf & 0x3) {
++		*buf++ = readb(chip->IO_ADDR_R);
++		len--;
++	}
++
++	readsl(chip->IO_ADDR_R, buf, len/4);
++
++	/* mop up trailing bytes */
++	for (i = (len & ~0x3); i < len; i++)
++		buf[i] = readb(chip->IO_ADDR_R);
++}
++
++static const char *nand_part_probes[] = { "cmdlinepart", NULL };
++
++static struct platform_device nand_flash[] = {
++	EMI_NAND_DEVICE(0),
++	EMI_NAND_DEVICE(1),
++	EMI_NAND_DEVICE(2),
++	EMI_NAND_DEVICE(3),
++	EMI_NAND_DEVICE(4),
++ };
++
++void __init stx7100_configure_nand(struct nand_config_data *data)
++{
++	unsigned int bank_base, bank_end;
++	unsigned int emi_bank = data->emi_bank;
++	unsigned long config[4];
++
++	struct platform_nand_data *nand_private_data =
++		nand_flash[emi_bank].dev.platform_data;
++
++	bank_base = emi_bank_base(emi_bank) + data->emi_withinbankoffset;
++	if (emi_bank == 4)
++		bank_end = 0x07ffffff;
++	else
++		bank_end = emi_bank_base(emi_bank+1) - 1;
++
++	printk(KERN_INFO "Configuring EMI Bank%d for NAND device\n", emi_bank);
++	emi_config_nand(data->emi_bank, data->emi_timing_data);
++	config[0] = 0x00300619;
++	config[1] = 0x8a230000;
++	config[2] = 0x8a130000;
++	config[3] = 0x00;
++	emi_bank_configure(1, config);
++
++	config[0] = 0x00300619;
++	config[1] = 0x8a230000;
++	config[2] = 0x8a230000;
++	config[3] = 0x00;
++	emi_bank_configure(2, config);
++
++	emi_config_pcmode(1, 0);
++	emi_config_pcmode(2, 0);
++
++	nand_flash[emi_bank].resource[0].start = bank_base;
++	nand_flash[emi_bank].resource[0].end = bank_end;
++
++	nand_private_data->chip.chip_delay = data->chip_delay;
++	nand_private_data->chip.partitions = data->mtd_parts;
++	nand_private_data->chip.nr_partitions = data->nr_parts;
++
++	platform_device_register(&nand_flash[emi_bank]);
++}
++
+ /* FDMA resources --------------------------------------------------------- */
+ 
+ static struct stm_plat_fdma_fw_regs stm_fdma_firmware_7100 = {
+-	.rev_id    = 0x8000 + (0x000 << 2), /* 0x8000 */
+-	.cmd_statn = 0x8000 + (0x010 << 2), /* 0x8040 */
+-	.ptrn      = 0x8000 + (0x460 << 2), /* 0x9180 */
+-	.cntn      = 0x8000 + (0x462 << 2), /* 0x9188 */
+-	.saddrn    = 0x8000 + (0x463 << 2), /* 0x918c */
+-	.daddrn    = 0x8000 + (0x464 << 2), /* 0x9190 */
++	.rev_id    = 0x8000 + (0x000 << 2), // 0x8000 /
++	.cmd_statn = 0x8000 + (0x010 << 2), // 0x8040 /
++	.req_ctln  = 0x9780, 
++	.ptrn      = 0x8000 + (0x460 << 2), // 0x9180 /
++	.cntn      = 0x8000 + (0x462 << 2), // 0x9188 /
++	.saddrn    = 0x8000 + (0x463 << 2), // 0x918c /
++	.daddrn    = 0x8000 + (0x464 << 2), // 0x9190 /
+ };
+ 
+ static struct stm_plat_fdma_hw stx7100_fdma_hw = {
+diff -Nur linux-sh4-orig/drivers/stm/stx7100_comms.c linux-sh4/drivers/stm/stx7100_comms.c
+--- linux-sh4-orig/drivers/stm/stx7100_comms.c	Wed Jul 08 12:07:19 2015
++++ linux-sh4/drivers/stm/stx7100_comms.c	Wed Jul 08 12:39:00 2015
+@@ -226,12 +226,10 @@
+ 			STM_PAD_PIO_BIDIR_NAMED(2, 0, 1, "SCL"),
+ 			STM_PAD_PIO_BIDIR_NAMED(2, 1, 1, "SDA"),
+ 		},
+-		.sysconfs_num = 2,
++		.sysconfs_num = 1,
+ 		.sysconfs = (struct stm_pad_sysconf []) {
+ 			/* SSC0_MUX_SEL = 0 (default assignment) */
+ 			STM_PAD_SYS_CFG(7, 1, 1, 0),
+-			/* DVO_OUT_ON = 0 (SSC not DVO) */
+-			STM_PAD_SYS_CFG(7, 10, 10, 0),
+ 		},
+ 	},
+ 	[1] = {
+@@ -344,7 +342,7 @@
+ 	BUG_ON(stx7100_ssc_configured[ssc]);
+ 	stx7100_ssc_configured[ssc] = 1;
+ 
+-	stx7100_ssc_devices[ssc].name = "i2c-stm";
++	stx7100_ssc_devices[ssc].name = "i2c-st40";
+ 	stx7100_ssc_devices[ssc].id = i2c_busnum;
+ 
+ 	plat_data = stx7100_ssc_devices[ssc].dev.platform_data;
+diff -Nur linux-sh4-orig/drivers/stm/stx7100_hispeed.c linux-sh4/drivers/stm/stx7100_hispeed.c
+--- linux-sh4-orig/drivers/stm/stx7100_hispeed.c	Mon Jul 06 08:25:01 2015
++++ linux-sh4-orig/drivers/stm/stx7100_hispeed.c	Wed Jul 08 12:54:13 2015
+@@ -153,6 +153,8 @@
+ 
+ static int stx7100_usb_pad_claim(struct stm_pad_state *state, void *priv)
+ {
++	// struct sysconf_field *sc;
++
+ 	/* Work around for USB over-current detection chip being
+ 	 * active low, and the 710x being active high.
+ 	 *
+@@ -193,6 +195,19 @@
+ 	stx7100_usb_pwr_gpio = stm_pad_gpio_request_output(state, "PWR", 1);
+ 	BUG_ON(stx7100_usb_pwr_gpio == STM_GPIO_INVALID);
+ 
++	//gpio_set_value(stx7100_usb_pwr_gpio, 0);	//freebox - reset usbstick dvbt
++	//mdelay(100);
++	gpio_set_value(stx7100_usb_pwr_gpio, 1);
++
++	/*
++	sc = sysconf_claim(SYS_CFG, 2, 1, 1, "stm-usb");
++	BUG_ON(!sc);
++	if (sysconf_read(sc)) {
++		sysconf_write(sc, 0);
++		mdelay(30);
++	}
++	*/
++
+ 	return 0;
+ }
+ 
+@@ -278,7 +293,7 @@
+ 
+ static struct stm_plat_miphy_dummy_data stx7100_miphy_dummy_platform_data = {
+ 	.miphy_first = 0,
+-	.miphy_count = 1,
++	.miphy_count = 2,
+ 	.miphy_modes = (enum miphy_mode[1]) {SATA_MODE},
+ };
+ 
+diff -Nur linux-sh4-orig/include/linux/stm/nand.h linux-sh4/include/linux/stm/nand.h
+--- linux-sh4-orig/include/linux/stm/nand.h	Thu Jul 02 07:37:31 2015
++++ linux-sh4/include/linux/stm/nand.h	Wed Jul 08 12:39:11 2015
+@@ -39,4 +39,48 @@
+ 	unsigned int		emi_withinbankoffset;
+ };
+ 
++/* NAND configuration data */
++struct nand_config_data {
++	unsigned int emi_bank;			/* EMI Bank#			*/
++	unsigned int emi_withinbankoffset;	/* Offset within EMI Bank	*/
++	void *emi_timing_data;			/* Timing data for EMI config   */
++	void *mtd_parts;			/* MTD partition table		*/
++	unsigned int chip_delay;		/* Read busy time for NAND chip */
++	int nr_parts;				/* Number of partitions		*/
++	int rbn_port;				/*  # : 'nand_RBn' PIO port #   */
++						/* -1 : if unconnected		*/
++	int rbn_pin;			        /*      'nand_RBn' PIO pin      */
++						/* (assumes shared RBn signal   */
++						/*  for multiple chips)		*/
++};
++
++#define EMI_NAND_DEVICE(_id)							\
++{										\
++	.name		= "gen_nand",						\
++	.id		= _id,							\
++	.num_resources	= 1,							\
++	.resource	= (struct resource[]) {					\
++		{								\
++			.flags		= IORESOURCE_MEM,			\
++		}								\
++	},									\
++	.dev		= {							\
++		.platform_data	= &(struct platform_nand_data) {		\
++			.chip		=					\
++			{							\
++				.nr_chips		= 1,			\
++				.options		= NAND_NO_AUTOINCR,	\
++				.part_probe_types 	= nand_part_probes,	\
++			},							\
++			.ctrl		=					\
++			{							\
++				.cmd_ctrl		= nand_cmd_ctrl,	\
++				.write_buf		= nand_write_buf,	\
++				.read_buf		= nand_read_buf,	\
++			}							\
++		}								\
++	}									\
++}
++
++
+ #endif /* __LINUX_STM_NAND_H */
+diff -Nur linux-sh4-orig/include/linux/stm/stx7100.h linux-sh4/include/linux/stm/stx7100.h
+--- linux-sh4-orig/include/linux/stm/stx7100.h	Wed Jul 08 12:07:19 2015
++++ linux-sh4/include/linux/stm/stx7100.h	Wed Jul 08 12:39:11 2015
+@@ -88,5 +88,6 @@
+ };
+ void stx7100_configure_pata(struct stx7100_pata_config *config);
+ 
++void stx7100_configure_nand(struct nand_config_data *config);
+ 
+ #endif
+diff -Nur linux-sh4-orig/include/linux/libata.h linux-sh4/include/linux/libata.h
+--- linux-sh4-orig/include/linux/libata.h	Thu Jul 02 06:47:32 2015
++++ linux-sh4/include/linux/libata.h	Wed Jul 08 12:39:11 2015
+@@ -52,6 +52,7 @@
+  * compile-time options: to be removed as soon as all the drivers are
+  * converted to the new debugging mechanism
+  */
++//#define ATA_DEBUG
+ #undef ATA_DEBUG		/* debugging output */
+ #undef ATA_VERBOSE_DEBUG	/* yet more debugging output */
+ #undef ATA_IRQ_TRAP		/* define to ack screaming irqs */
+@@ -884,7 +885,72 @@
+ 	 * fields must be pointers.
+ 	 */
+ 	const struct ata_port_operations	*inherits;
++	
++	unsigned char (*readb)(const volatile void __iomem *addr);
++	unsigned short (*readw)(const volatile void __iomem *addr);
++	void (*writeb)(unsigned char b, volatile void __iomem *addr);
++	void (*writew)(unsigned short b, volatile void __iomem *addr);
+ };
++
++static inline u8 sata_readb(struct ata_port *ap, const volatile void __iomem *addr)
++{
++	u8 r;
++	if (ap->ops->readb)
++		r = (ap->ops->readb)(addr);
++	else
++		r = readb(addr);
++
++	return r;
++}
++
++static inline u16 sata_readw(struct ata_port *ap, const volatile void __iomem *addr)
++{
++	u16 r;
++	if (ap->ops->readw)
++		r = (ap->ops->readw)(addr);
++	else
++		r = readw(addr);
++
++	return r;
++}
++
++static inline void sata_writeb(struct ata_port *ap, u8 b, volatile void __iomem *addr)
++{
++	if (ap->ops->writeb)
++		(ap->ops->writeb)(b, addr);
++	else
++		writeb(b, addr);
++}
++
++static inline void sata_writew(struct ata_port *ap, u16 b, volatile void __iomem *addr)
++{
++	if (ap->ops->writew)
++		(ap->ops->writew)(b, addr);
++	else
++		writew(b, addr);
++}
++
++
++//fix freebox 19.10.2011
++#undef __raw_readb
++#define __raw_readb(a_)	sata_readb(ap, a_)
++#undef __raw_writeb
++#define __raw_writeb(v_,a_)	sata_writeb(ap, v_, a_)
++#undef __raw_readw
++#define __raw_readw(a_)	sata_readw(ap, a_)
++#undef __raw_writew
++#define __raw_writew(v_,a_)	sata_writew(ap, v_, a_)
++//fix freebox 19.10.2011
++
++
++#undef readb
++#define readb(a_)	sata_readb(ap, a_)
++#undef writeb
++#define writeb(v_,a_)	sata_writeb(ap, v_, a_)
++#undef readw
++#define readw(a_)	sata_readw(ap, a_)
++#undef writew
++#define writew(v_,a_)	sata_writew(ap, v_, a_)
+ 
+ struct ata_port_info {
+ 	unsigned long		flags;
