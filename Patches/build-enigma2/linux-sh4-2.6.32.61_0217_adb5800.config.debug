@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.32.61
-# Thu Nov 26 08:35:21 2015
+# Wed Nov 11 18:26:21 2015
 #
 CONFIG_SUPERH=y
 CONFIG_SUPERH32=y
@@ -462,18 +462,6 @@ CONFIG_IP_NF_MANGLE=m
 # CONFIG_DCB is not set
 
 #
-# IPv6: Netfilter Configuration
-#
-# CONFIG_IP6_NF_IPTABLES is not set
-# CONFIG_IP6_NF_IPTABLES=y
-# CONFIG_NF_CONNTRACK_IPV6=m
-# CONFIG_IP6_NF_MATCH_IPV6HEADER=m
-# CONFIG_IP6_NF_TARGET_LOG=m
-# CONFIG_IP6_NF_FILTER=m
-# CONFIG_IP6_NF_TARGET_REJECT=m
-# CONFIG_IP6_NF_MANGLE=m
-
-#
 # Network testing
 #
 # CONFIG_NET_PKTGEN is not set
@@ -752,9 +740,7 @@ CONFIG_WLAN_80211=y
 # CONFIG_PPP is not set
 # CONFIG_SLIP is not set
 # CONFIG_NETCONSOLE is not set
-# CONFIG_NETCONSOLE_DYNAMIC is not set
 # CONFIG_NETPOLL is not set
-# CONFIG_NETPOLL_TRAP is not set
 # CONFIG_NET_POLL_CONTROLLER is not set
 # CONFIG_ISDN is not set
 # CONFIG_PHONE is not set
