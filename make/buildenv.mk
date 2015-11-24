@@ -139,7 +139,10 @@ PLATFORM_CPPFLAGS := \
 	$(if $(VITAMIN_HD5000),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_VITAMIN_HD5000 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include") \
 	$(if $(SAGEMCOM88),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_SAGEMCOM88 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include") \
 	$(if $(ARIVALINK200),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_ARIVALINK200 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include") \
-	$(if $(FORTIS_DP7000),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_FORTIS_DP7000 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include")
+	$(if $(FORTIS_DP7000),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_FORTIS_DP7000 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include") \
+	$(if $(ADB5800),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_ADB5800 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include" --enable-adb5800) \
+	$(if $(ADB2850),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_ADB2850 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include" --enable-adb2850) \
+	$(if $(DSI87),CPPFLAGS="$(CPPFLAGS) -DPLATFORM_DSI87 -I$(driverdir)/include -I $(buildprefix)/$(KERNEL_DIR)/include" --enable-dsi87)
 
 DRIVER_PLATFORM := \
 	$(if $(UFS910),UFS910=$(UFS910)) \
@@ -179,6 +182,9 @@ DRIVER_PLATFORM := \
 	$(if $(SAGEMCOM88),SAGEMCOM88=$(SAGEMCOM88)) \
 	$(if $(ARIVALINK200),ARIVALINK200=$(ARIVALINK200)) \
 	$(if $(FORTIS_DP7000),FORTIS_DP7000=$(FORTIS_DP7000)) \
+	$(if $(ADB5800),ADB5800=$(ADB5800)) \
+	$(if $(ADB2850),ADB2850=$(ADB2850)) \
+	$(if $(DSI87),DSI87=$(DSI87)) \
 	$(if $(WLANDRIVER),WLANDRIVER=$(WLANDRIVER)) \
 	$(if $(PLAYER191),PLAYER191=$(PLAYER191))
 
