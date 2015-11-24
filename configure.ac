@@ -449,6 +449,30 @@ AC_ARG_ENABLE(ipbox55,
 AM_CONDITIONAL(ENABLE_IPBOX55,test "$enable_ipbox55" = "yes")
 AC_SUBST(IPBOX55)
 
+AC_ARG_ENABLE(adb5800,
+	AS_HELP_STRING(--enable-adb5800, enable adb5800 stuff),
+	[case "${enableval}" in
+		yes) ADB5800=adb5800 ;;
+	esac],[enable_adb5800=no])
+AM_CONDITIONAL(ENABLE_ADB5800,test "$enable_adb5800" = "yes")
+AC_SUBST(ADB5800)
+
+AC_ARG_ENABLE(adb2850,
+	AS_HELP_STRING(--enable-adb2850, enable adb2850 stuff),
+	[case "${enableval}" in
+		yes) ADB2850=adb2850 ;;
+	esac],[enable_adb2850=no])
+AM_CONDITIONAL(ENABLE_ADB2850,test "$enable_adb2850" = "yes")
+AC_SUBST(ADB5800)
+
+AC_ARG_ENABLE(dsi87,
+	AS_HELP_STRING(--enable-dsi87, enable dsi87 stuff),
+	[case "${enableval}" in
+		yes) DSI87=dsi87 ;;
+	esac],[enable_dsi87=no])
+AM_CONDITIONAL(ENABLE_DSI87,test "$enable_dsi87" = "yes")
+AC_SUBST(DSI87)
+
 AC_PREFIX_DEFAULT(/ufs910)
 if test "$prefix" = "NONE"; then
 	prefix=/ufs910

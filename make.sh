@@ -1,7 +1,11 @@
 #!/bin/bash
 
 if [ "$1" == -h ] || [ "$1" == --help ]; then
+<<<<<<< HEAD
  echo "Parameter 1: target system (1-37)"
+=======
+ echo "Parameter 1: target system (1-39)"
+>>>>>>> a0faf87... Preparation for adding ADB5800 box to repository.
  echo "Parameter 2: kernel (1-5)"
  echo "Parameter 3: debug (y/N)"
  echo "Parameter 4: player (1-2)"
@@ -58,7 +62,7 @@ CONFIGPARAM="$CONFIGPARAM --host=$host_alias --build=$host_alias"
 ##############################################
 
 case $1 in
-	[1-9] | 1[0-9] | 2[0-9] | 3[0-9]) REPLY=$1;;
+	[1-9] | 1[0-9] | 2[0-9] | 3[0-9] | 4[0] ) REPLY=$1;;
 	*)
 		echo "Target receivers:"
 		echo "    1) Kathrein UFS-910"
@@ -97,7 +101,10 @@ case $1 in
 		echo "   35) Fortis HS7819"
 		echo "   36) Fortis DP7000 (not finished yet)"
 		echo "   37) Xsarius Alpha (Cuberevo 3000HD)"
-		read -p "Select target (1-37)? ";;
+		echo "   38) ADB 5800S/SX"
+		echo "   39) ADB 2849/2850ST"
+		echo "   40) Sagemcom DSI87"
+		read -p "Select target (1-40)? ";;
 esac
 
 case "$REPLY" in
@@ -137,6 +144,9 @@ case "$REPLY" in
 	35) TARGET="--enable-hs7819";BOXTYPE="--with-boxtype=hs7819";;
 	36) TARGET="--enable-fortis_dp7000";BOXTYPE="--with-boxtype=fortis_dp7000";;
 	37) TARGET="--enable-cuberevo_3000hd";BOXTYPE="--with-boxtype=cuberevo_3000hd";;
+	38) TARGET="--enable-adb5800";BOXTYPE="--with-boxtype=adb5800";;
+	39) TARGET="--enable-adb2850";BOXTYPE="--with-boxtype=adb2850";;
+	40) TARGET="--enable-dsi87";BOXTYPE="--with-boxtype=dsi87";;
 	 *) TARGET="--enable-atevio7500";BOXTYPE="--with-boxtype=atevio7500";;
 esac
 CONFIGPARAM="$CONFIGPARAM $TARGET $BOXTYPE"
