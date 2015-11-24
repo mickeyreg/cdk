@@ -71,7 +71,7 @@ if [ ! -e /var/etc/.firstboot ]; then
    
    if [ $boxtype == 'bsla' ]; then
     echo "init Cooler"
-    insmod $MODDIR/cooler.ko
+    insmod $MODDIR/fan_ctrl.ko
    fi
 
    echo "init AVS"
