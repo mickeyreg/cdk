@@ -71,6 +71,9 @@ ${DIALOG} --menu "\n Select Target:\n " $height $width $listheight \
 35	"Fortis HS7819 (not finished yet)" \
 36	"Fortis DP7000 (not finished yet)" \
 37	"Xsarius Alpha (Cuberevo 3000HD)" \
+38	"ADB 5800S/SX" \
+39	"ADB 2849/2850ST" \
+40	"Sagemcom DSI87" \
 2> ${tempfile}
 
 opt=${?}
@@ -85,9 +88,10 @@ clear
 
 ${DIALOG} --menu "\n Select Kernel: \n " $height $width $listheight \
 1	"STM 24 P0209" \
-2	"STM 24 P0211 (recommended)" \
-3	"STM 24 P0214 (experimental)" \
-4	"STM 24 P0215 (experimental)" \
+2	"STM 24 P0211" \
+3	"STM 24 P0214" \
+4	"STM 24 P0215" \
+4	"STM 24 P0217 (recommended)" \
 2> ${tempfile}
 
 opt=${?}
