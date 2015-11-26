@@ -237,7 +237,8 @@ SAGEMCOM88_PATCHES_24 = $(COMMONPATCHES_24) \
 		linux-sh4-sagemcom88_setup_stm24$(PATCH_STR).patch \
 		linux-sh4-stmmac_stm24$(PATCH_STR).patch \
 		linux-sh4-lmb_stm24$(PATCH_STR).patch \
-		linux-sh4-sagemcom88_sound_stm24$(PATCH_STR).patch
+		linux-sh4-sagemcom88_sound_stm24$(PATCH_STR).patch \
+		linux-sh4-usbserial_ch34x_stm24$(PATCH_STR).patch
 
 ARIVALINK200_PATCHES_24 = $(COMMONPATCHES_24) \
 		linux-sh4-arivalink200_setup_stm24$(PATCH_STR).patch \
@@ -255,7 +256,9 @@ ADB5800_PATCHES_24 = $(COMMONPATCHES_24) \
 		linux-usbwait123_stm24.patch \
 		linux-sh4-i2c-st40-pio_stm24$(PATCH_STR).patch \
 		linux-sh4-pcm_noise_fix_stm24$(PATCH_STR).patch \
-		linux-sh4-adb5800_setup_stm24$(PATCH_STR).patch
+		linux-sh4-adb5800_setup_stm24$(PATCH_STR).patch \
+		linux-sh4-remove_pcm_reader_stm24.patch \
+		linux-sh4-usbserial_ch34x_stm24$(PATCH_STR).patch
 
 
 KERNELPATCHES_24 = \
