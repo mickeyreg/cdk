@@ -964,3 +964,26 @@ diff -rupN linux-sh4-orig/drivers/mtd/nand/Kconfig linux-sh4/drivers/mtd/nand/Kc
  	help
  	  Enables the STMicroelectronics NAND driver for platforms in which the
  	  device is connected via an EMI bank.
+diff -rupN linux-sh4-orig/Makefile linux-sh4/Makefile
+--- linux-sh4-orig/Makefile	2015-12-03 08:18:26.000000000 +0100
++++ linux-sh4/Makefile	2015-12-03 08:20:38.928246324 +0100
+@@ -221,8 +221,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH"
+ 
+ HOSTCC       = gcc
+ HOSTCXX      = g++
+-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+-HOSTCXXFLAGS = -O2
++HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O1 -fomit-frame-pointer
++HOSTCXXFLAGS = -O1
+ 
+ # Decide whether to build built-in, modular, or both.
+ # Normally, just do built-in.
+@@ -524,7 +524,7 @@ all: vmlinux
+ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+ KBUILD_CFLAGS	+= -Os
+ else
+-KBUILD_CFLAGS	+= -O2
++KBUILD_CFLAGS	+= -O1
+ endif
+ 
+ include $(srctree)/arch/$(SRCARCH)/Makefile
