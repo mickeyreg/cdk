@@ -804,7 +804,11 @@ endif
 if !ENABLE_VIP2_V1
 if !ENABLE_SPARK
 if !ENABLE_SPARK7162
+if !ENABLE_ADB5800
+if !ENABLE_SAGEMCOM88
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cic/*.ko $(prefix)/release/lib/modules/
+endif
+endif
 endif
 endif
 endif
