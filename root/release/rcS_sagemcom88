@@ -6,7 +6,7 @@ boxtype=`cat /proc/boxtype`
 
 if [ $boxtype == 'uhd88' ]; then
   echo "Init LED"
-  insmod $MODDIR/front_led.ko
+  insmod $MODDIR/front_lfd.ko
 else
   echo "Init VFD"
   insmod $MODDIR/front_vfd.ko

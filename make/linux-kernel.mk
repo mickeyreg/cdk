@@ -259,6 +259,18 @@ ADB5800_PATCHES_24 = $(COMMONPATCHES_24) \
 		linux-sh4-usbserial_ch34x_stm24$(PATCH_STR).patch
 #		linux-sh4-remove_pcm_reader_stm24.patch (before ch34x)
 
+ADB2850_PATCHES_24 = $(COMMONPATCHES_24) \
+		linux-sh4-stmmac_stm24$(PATCH_STR).patch \
+		linux-sh4-lmb_stm24$(PATCH_STR).patch \
+		linux-sh4-adb2850_setup_stm24$(PATCH_STR).patch \
+		linux-sh4-usbserial_ch34x_stm24$(PATCH_STR).patch
+#		linux-sh4-i2c-st40-pio_stm24$(PATCH_STR).patch \
+#		linux-sh4-mini_fo_stm24$(PATCH_STR).patch \
+#		linux-squashfs-lzma_stm24$(PATCH_STR).patch \
+#		linux-usbwait123_stm24.patch \
+#		linux-sh4-pcm_noise_fix_stm24$(PATCH_STR).patch \
+#		linux-sh4-remove_pcm_reader_stm24.patch (before ch34x)
+
 
 KERNELPATCHES_24 = \
 		$(if $(UFS910),$(UFS910_PATCHES_24)) \

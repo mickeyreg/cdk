@@ -463,7 +463,7 @@ AC_ARG_ENABLE(adb2850,
 		yes) ADB2850=adb2850 ;;
 	esac],[enable_adb2850=no])
 AM_CONDITIONAL(ENABLE_ADB2850,test "$enable_adb2850" = "yes")
-AC_SUBST(ADB5800)
+AC_SUBST(ADB2850)
 
 AC_ARG_ENABLE(dsi87,
 	AS_HELP_STRING(--enable-dsi87, enable dsi87 stuff),
