@@ -69,16 +69,15 @@ if [ ! -e /var/etc/.firstboot ]; then
   insmod $MODDIR/embxshm.ko mailbox0=shm:0:7:0x60000000:0:16:16:0:1024:0xa4000000:0x10000000
   insmod $MODDIR/mme_host.ko transport0=shm
 
-  if [ $boxtype == 'BSLA' ] || [ $boxtype == 'BZZB' ]; then
-    echo "init Cooler"
-    insmod $MODDIR/fan_ctrl.ko
-  fi
+  echo "init Cooler"
+  insmod $MODDIR/fan_ctrl.ko
 
   echo "init AVS"
   if [ $boxtype == 'BXZB' ]; then
     insmod $MODDIR/avs.ko type=avs_none
   else
     insmod $MODDIR/avs.ko type=stv6412
+  fi
 
   echo "init player"
   player=`cat /proc/stb/player/version`
@@ -105,7 +104,7 @@ if [ ! -e /var/etc/.firstboot ]; then
 
   echo "init drivers"
   if [ $player -gt 131 ]; then
-    insmod $MODDIR/pti.ko
+    insmod $MODDIR/pti.ko videoMem=2048
     insmod $MODDIR/stm_monitor.ko
     insmod $MODDIR/stmsysfs.ko
     if [ $boxtype == 'BZZB' ]; then
@@ -120,10 +119,11 @@ if [ ! -e /var/etc/.firstboot ]; then
     insmod $MODDIR/stmdvb.ko
     insmod $MODDIR/stm_monitor.ko
   fi
-  insmod $MODDIR/player2.ko
+  insmod $MODDIR/player2.ko discardlateframe=0
   insmod $MODDIR/sth264pp.ko
   insmod $MODDIR/stmalloc.ko
   insmod $MODDIR/platform.ko
+  insmod $MODDIR/silencegen.ko
   insmod $MODDIR/smartcard.ko
 
   echo "init dvb-t as102"
@@ -137,7 +137,7 @@ if [ ! -e /var/etc/.firstboot ]; then
     echo "BSKA" > /proc/stb/video/switch_type
   fi
 
-  if [ "$VIDEO" = "scart" ]; then
+  if [ "$VIDEO" == "scart" ]; then
     echo "VIDEO:scart"
     echo "scart" > /proc/stb/video/switch
   else
