@@ -625,6 +625,7 @@ release_tvheadend_adb2850: release_tvheadend_common_utils
 	mkdir -p $(prefix)/release/var/run/lirc
 	rm -f $(prefix)/release/bin/vdstandby
 	cp -f $(buildprefix)/root/root_enigma2/usr/local/share/enigma2/keymap_adb_box.xml $(prefix)/release/usr/local/share/enigma2/keymap.xml
+
 #
 # release_base
 #
