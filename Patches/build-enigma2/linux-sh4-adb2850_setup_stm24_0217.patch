@@ -2428,7 +2428,7 @@ diff -rupN linux-sh4-orig/drivers/stm/stx7111_comms.c linux-sh4/drivers/stm/stx7
  			STM_PAD_PIO_BIDIR_NAMED(4, 1, 1, "SDA"),
  		},
 -		.sysconfs_num = 1,
-+		.sysconfs_num = 3,
++		.sysconfs_num = 4,
  		.sysconfs = (struct stm_pad_sysconf []) {
  			/* SSC2_MUX_SEL = 0 (default assignment) */
  			STM_PAD_SYS_CFG(7, 3, 3, 0),
@@ -2436,7 +2436,7 @@ diff -rupN linux-sh4-orig/drivers/stm/stx7111_comms.c linux-sh4/drivers/stm/stx7
 +			//STM_PAD_SYS_CFG(5, 0, 0, 1),		// cic
 +			//STM_PAD_SYS_CFG(5, 17, 17, 1),	// cic
 +//			STM_PAD_SYS_CFG(5, 8, 8, 0),		//cec off
-+//			STM_PAD_SYS_CFG(5, 8, 8, 1),		//cec on
++			STM_PAD_SYS_CFG(5, 8, 8, 1),		//cec on
 +			STM_PAD_SYS_CFG(7, 15, 15, 1), //i2c
 +			STM_PAD_SYS_CFG(5, 25, 25, 0), //pio7/3 1=fe_gpio3 0=standard pio
 +//			STM_PAD_SYS_CFG(5, 24, 24, 0), //pio1/7 1=cec 0=standard pio
