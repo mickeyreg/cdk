@@ -596,6 +596,8 @@ release_tvheadend_adb5800: release_tvheadend_common_utils
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/boot/video_7100.elf $(prefix)/release/boot/video.elf
+	cp $(buildprefix)/root/firmware/as102_data1_st.hex $(prefix)/release/lib/firmware/
+	cp $(buildprefix)/root/firmware/as102_data2_st.hex $(prefix)/release/lib/firmware/
 	rm -f $(prefix)/release/lib/firmware/dvb-fe-{avl6222,cx24116,cx21143}.fw
 	cp -f $(buildprefix)/root/release/fstab_adb_box $(prefix)/release/etc/fstab
 	cp -dp $(buildprefix)/root/release/lircd_adb_box.conf $(prefix)/release/etc/lircd.conf
@@ -616,9 +618,35 @@ release_tvheadend_adb2850: release_tvheadend_common_utils
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/stgfb/stmfb/stmcore-display-sti7111.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_adb28xx/cec_ctrl.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/smartcard_nbox/smartcard.ko $(prefix)/release/lib/modules/
-#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
-#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/boot/video_7111.elf $(prefix)/release/boot/video.elf
+	cp $(buildprefix)/root/firmware/as102_data1_st.hex $(prefix)/release/lib/firmware/
+	cp $(buildprefix)/root/firmware/as102_data2_st.hex $(prefix)/release/lib/firmware/
+	rm -f $(prefix)/release/lib/firmware/dvb-fe-{avl6222,cx24116,cx21143}.fw
+	cp -dp $(buildprefix)/root/release/lircd_adb_box.conf $(prefix)/release/etc/lircd.conf
+	cp -p $(targetprefix)/usr/sbin/lircd $(prefix)/release/usr/bin/lircd
+	mkdir -p $(prefix)/release/var/run/lirc
+	rm -f $(prefix)/release/bin/vdstandby
+	cp -f $(buildprefix)/root/root_enigma2/usr/local/share/enigma2/keymap_adb_box.xml $(prefix)/release/usr/local/share/enigma2/keymap.xml
+
+#
+# release_dsi87
+#
+release_tvheadend_dsi87: release_tvheadend_common_utils
+	echo "DSI87" > $(prefix)/release/etc/hostname
+	cp $(buildprefix)/root/release/halt_adb_box $(prefix)/release/etc/init.d/halt
+	chmod 755 $(prefix)/release/etc/init.d/halt
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontcontroller/front_lfd/front_led.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontends/*.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/stgfb/stmfb/stmcore-display-sti7111.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_adb28xx/cec_ctrl.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/smartcard_nbox/smartcard.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/boot/video_7111.elf $(prefix)/release/boot/video.elf
+	cp $(buildprefix)/root/firmware/as102_data1_st.hex $(prefix)/release/lib/firmware/
+	cp $(buildprefix)/root/firmware/as102_data2_st.hex $(prefix)/release/lib/firmware/
 	rm -f $(prefix)/release/lib/firmware/dvb-fe-{avl6222,cx24116,cx21143}.fw
 	cp -dp $(buildprefix)/root/release/lircd_adb_box.conf $(prefix)/release/etc/lircd.conf
 	cp -p $(targetprefix)/usr/sbin/lircd $(prefix)/release/usr/bin/lircd
@@ -793,8 +821,12 @@ if !ENABLE_VIP2_V1
 if !ENABLE_SPARK
 if !ENABLE_SPARK7162
 if !ENABLE_ADB5800
+if !ENABLE_ADB2850
+if !ENABLE_DSI87
 if !ENABLE_SAGEMCOM88
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cic/*.ko $(prefix)/release/lib/modules/
+endif
+endif
 endif
 endif
 endif

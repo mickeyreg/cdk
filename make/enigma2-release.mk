@@ -613,15 +613,16 @@ release_enigma2_sagemcom88: release_enigma2_common_utils
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/fan_sagemcom88/fan_ctrl.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_sagemcom88/cec_ctrl.ko $(prefix)/release/lib/modules/
 	mkdir -p $(prefix)/release/lib/modules/crypto
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto/*.ko $(prefix)/release/lib/modules/crypto/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko $(prefix)/release/lib/modules/crypto/
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto/*.ko $(prefix)/release/lib/modules/crypto/ || true
+	[ -e $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko $(prefix)/release/lib/modules/crypto/ || true
 	mkdir -p $(prefix)/release/lib/modules/netfilter
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/ || true
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/ || true
 	cp $(targetprefix)/boot/video_7105.elf $(prefix)/release/boot/video.elf
 	cp $(targetprefix)/boot/audio_7105.elf $(prefix)/release/boot/audio.elf
 	cp -f $(buildprefix)/root/root_enigma2/usr/local/share/enigma2/keymap_sagemcom88.xml $(prefix)/release/usr/local/share/enigma2/keymap.xml
 	[ -e $(buildprefix)/root/release/fe_core_sagemcom88$(KERNELSTMLABEL).ko ] && cp $(buildprefix)/root/release/fe_core_sagemcom88$(KERNELSTMLABEL).ko $(prefix)/release/lib/modules/fe_core.ko || true
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontends/*.ko $(prefix)/release/lib/modules/
 	rm -f $(prefix)/release/lib/firmware/dvb-fe-{avl2108,cx24116,cx21143,stv6306}.fw
 	mv $(prefix)/release/lib/firmware/component_7105_pdk7105.fw $(prefix)/release/lib/firmware/component.fw
 	rm $(prefix)/release/lib/firmware/component_7111_mb618.fw
@@ -681,14 +682,14 @@ release_enigma2_adb5800: release_enigma2_common_utils
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/adb_box_fan/fan_ctrl.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_adb_box/cec_ctrl.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/smartcard_nbox/smartcard.ko $(prefix)/release/lib/modules/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
+#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
+#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
 	mkdir -p $(prefix)/release/lib/modules/crypto
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto/*.ko $(prefix)/release/lib/modules/crypto/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko $(prefix)/release/lib/modules/crypto/
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto/*.ko $(prefix)/release/lib/modules/crypto/ || true
+	[ -e $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko $(prefix)/release/lib/modules/crypto/ || true
 	mkdir -p $(prefix)/release/lib/modules/netfilter
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/
-	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/ || true
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/ || true
 	cp $(targetprefix)/boot/video_7100.elf $(prefix)/release/boot/video.elf
 #	cp $(targetprefix)/boot/audio_7100.elf $(prefix)/release/boot/audio.elf
 	rm -f $(prefix)/release/lib/firmware/dvb-fe-{avl6222,cx24116,cx21143}.fw
@@ -707,6 +708,35 @@ release_enigma2_adb2850: release_enigma2_common_utils
 	cp $(buildprefix)/root/release/halt_adb_box $(prefix)/release/etc/init.d/halt
 	chmod 755 $(prefix)/release/etc/init.d/halt
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontcontroller/front_led/front_led.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontends/*.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/stgfb/stmfb/stmcore-display-sti7111.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_adb28xx/cec_ctrl.ko $(prefix)/release/lib/modules/
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/smartcard_nbox/smartcard.ko $(prefix)/release/lib/modules/
+#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/as102/dvb-as102.ko $(prefix)/release/lib/modules/
+#	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/dvbt/siano/*.ko $(prefix)/release/lib/modules/
+	mkdir -p $(prefix)/release/lib/modules/crypto
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/crypto/*.ko $(prefix)/release/lib/modules/crypto/ || true
+	[ -e $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/lib/libcrc32c.ko $(prefix)/release/lib/modules/crypto/ || true
+	mkdir -p $(prefix)/release/lib/modules/netfilter
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/ || true
+	[ -d $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter ] && cp $(targetprefix)/lib/modules/$(KERNELVERSION)/kernel/net/ipv4/netfilter/*.ko $(prefix)/release/lib/modules/netfilter/ || true
+	cp $(targetprefix)/boot/video_7111.elf $(prefix)/release/boot/video.elf
+	cp $(targetprefix)/boot/audio_7111.elf $(prefix)/release/boot/audio.elf
+	rm -f $(prefix)/release/lib/firmware/dvb-fe-{avl6222,cx24116,cx21143}.fw
+	cp -dp $(buildprefix)/root/release/lircd_adb_box.conf $(prefix)/release/etc/lircd.conf
+	cp -p $(targetprefix)/usr/sbin/lircd $(prefix)/release/usr/bin/lircd
+	mkdir -p $(prefix)/release/var/run/lirc
+	rm -f $(prefix)/release/bin/vdstandby
+	cp -f $(buildprefix)/root/root_enigma2/usr/local/share/enigma2/keymap_adb_box.xml $(prefix)/release/usr/local/share/enigma2/keymap.xml
+
+#
+# release_dsi87
+#
+release_enigma2_dsi87: release_enigma2_common_utils
+	echo "DSI87" > $(prefix)/release/etc/hostname
+	cp $(buildprefix)/root/release/halt_adb_box $(prefix)/release/etc/init.d/halt
+	chmod 755 $(prefix)/release/etc/init.d/halt
+	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontcontroller/front_lfd/front_led.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/frontends/*.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/stgfb/stmfb/stmcore-display-sti7111.ko $(prefix)/release/lib/modules/
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cec_adb28xx/cec_ctrl.ko $(prefix)/release/lib/modules/
@@ -911,8 +941,10 @@ if !ENABLE_SPARK
 if !ENABLE_SPARK7162
 if !ENABLE_ADB5800
 if !ENABLE_ADB2850
+if !ENABLE_DSI87
 if !ENABLE_SAGEMCOM88
 	cp $(targetprefix)/lib/modules/$(KERNELVERSION)/extra/cic/*.ko $(prefix)/release/lib/modules/
+endif
 endif
 endif
 endif
@@ -1234,7 +1266,7 @@ endif
 # IMPORTANT: it is assumed that only one variable is set. Otherwise the target name won't be resolved.
 #
 $(D)/release_enigma2: \
-$(D)/%release_enigma2: release_enigma2_base release_enigma2_$(TF7700)$(HL101)$(VIP1_V2)$(VIP2_V1)$(UFS910)$(UFS912)$(UFS913)$(UFS922)$(UFC960)$(SPARK)$(SPARK7162)$(OCTAGON1008)$(FORTIS_HDBOX)$(ATEVIO7500)$(HS7110)$(HS7810A)$(HS7119)$(HS7819)$(ATEMIO520)$(ATEMIO530)$(CUBEREVO)$(CUBEREVO_MINI)$(CUBEREVO_MINI2)$(CUBEREVO_MINI_FTA)$(CUBEREVO_250HD)$(CUBEREVO_2000HD)$(CUBEREVO_9500HD)$(HOMECAST5101)$(IPBOX9900)$(IPBOX99)$(IPBOX55)$(ADB_BOX)$(VITAMIN_HD5000)$(SAGEMCOM88)$(ARIVALINK200)$(FORTIS_DP7000)$(ADB5800)$(ADB2850)
+$(D)/%release_enigma2: release_enigma2_base release_enigma2_$(TF7700)$(HL101)$(VIP1_V2)$(VIP2_V1)$(UFS910)$(UFS912)$(UFS913)$(UFS922)$(UFC960)$(SPARK)$(SPARK7162)$(OCTAGON1008)$(FORTIS_HDBOX)$(ATEVIO7500)$(HS7110)$(HS7810A)$(HS7119)$(HS7819)$(ATEMIO520)$(ATEMIO530)$(CUBEREVO)$(CUBEREVO_MINI)$(CUBEREVO_MINI2)$(CUBEREVO_MINI_FTA)$(CUBEREVO_250HD)$(CUBEREVO_2000HD)$(CUBEREVO_9500HD)$(HOMECAST5101)$(IPBOX9900)$(IPBOX99)$(IPBOX55)$(ADB_BOX)$(VITAMIN_HD5000)$(SAGEMCOM88)$(ARIVALINK200)$(FORTIS_DP7000)$(ADB5800)$(ADB2850)$(DSI87)
 	touch $@
 
 #

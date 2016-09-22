@@ -111,20 +111,6 @@ if [ ! -e /var/etc/.firstboot ]; then
     insmod $MODDIR/dvb-as102.ko
   fi
 
-  if [ $boxtype == 'BXZB' ]; then
-    echo "BXZB" > /proc/stb/video/switch_type
-  else
-    echo "BSKA" > /proc/stb/video/switch_type
-  fi
-
-  if [ "$VIDEO" == "scart" ]; then
-    echo "VIDEO:scart"
-    echo "scart" > /proc/stb/video/switch
-  else
-    echo "VIDEO:hdmi_component"
-    echo "component720p" > /proc/stb/video/switch
-  fi
-
   showiframe -p /var/boot/bootlogo.mvi &
   stfbcontrol a 0
 
