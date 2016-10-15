@@ -73,7 +73,7 @@ diff -rupN linux-sh4-orig/arch/sh/boards/mach-mb618/setup.c linux-sh4/arch/sh/bo
  
  static void __init mb618_setup(char** cmdline_p)
  {
-@@ -54,118 +72,57 @@ static void __init mb618_setup(char** cm
+@@ -54,118 +72,54 @@ static void __init mb618_setup(char** cm
  	stx7111_early_device_init();
  
  	stx7111_configure_asc(2, &(struct stx7111_asc_config) {
@@ -118,8 +118,10 @@ diff -rupN linux-sh4-orig/arch/sh/boards/mach-mb618/setup.c linux-sh4/arch/sh/bo
 -		.desc = "SW2",
 +		.name   = "NOR U-BOOT (512KB)",
 +		.size   = 0x00080000,
-+		.offset = 0
- 	}, {
++		.offset = 0,
++//		.mask_flags = MTD_WRITEABLE /*force read-only */
++	}
+-	}, {
 -		.code = BTN_1,
 -		.gpio = stm_gpio(6, 3),
 -		.desc = "SW3",
@@ -142,10 +144,6 @@ diff -rupN linux-sh4-orig/arch/sh/boards/mach-mb618/setup.c linux-sh4/arch/sh/bo
 -		.buttons = mb618_buttons,
 -		.nbuttons = ARRAY_SIZE(mb618_buttons),
 -	},
-+		.name   = "NOR R00T (3,5MB)",
-+		.size   = MTDPART_SIZ_FULL,
-+		.offset = MTDPART_OFS_APPEND
-+	}
  };
  
 -
@@ -196,13 +194,13 @@ diff -rupN linux-sh4-orig/arch/sh/boards/mach-mb618/setup.c linux-sh4/arch/sh/bo
 +// Nand Flash Configuration
 +static struct mtd_partition nand_parts[] = {
 +	 {
++	 .name   = "NAND ROOT (61MB)",
++	 .size   = MTDPART_SIZ_FULL,
++	 .offset = 0x300000
++	 }, {
 +	 .name   = "NAND KERNEL (3MB)",
 +	 .size   = 0x300000,
 +	 .offset = 0
-+	 }, {
-+	 .name   = "NAND ROOT (61MB)",
-+	 .size   = MTDPART_SIZ_FULL,
-+	 .offset = MTDPART_OFS_APPEND
 +	 },
 +};
 +
@@ -226,7 +224,7 @@ diff -rupN linux-sh4-orig/arch/sh/boards/mach-mb618/setup.c linux-sh4/arch/sh/bo
  	.timing_data	= &(struct stm_nand_timing_data) {
  		.sig_setup	= 50,		/* times in ns */
  		.sig_hold	= 50,
-@@ -177,191 +134,80 @@ struct stm_nand_bank_data mb618_nand_fla
+@@ -177,191 +134,81 @@ struct stm_nand_bank_data mb618_nand_fla
  		.rd_off		= 50,
  		.chip_delay	= 50,		/* in us */
  	},
@@ -344,6 +342,7 @@ diff -rupN linux-sh4-orig/arch/sh/boards/mach-mb618/setup.c linux-sh4/arch/sh/bo
 -#endif
 -	&mb618_button_device,
 +	&mb618_nand_device,
++	&mb618_nor_device,
  };
  
 -/* SCART switch simple control */
