@@ -1664,26 +1664,32 @@ $(D)/alsautils: $(D)/bootstrap @DEPENDS_alsautils@
 #
 # libopenthreads
 #
-$(D)/libopenthreads: $(D)/bootstrap @DEPENDS_libopenthreads@
-	@PREPARE_libopenthreads@
-	[ -d "$(archivedir)/cst-public-libraries-openthreads.git" ] && \
-	(cd $(archivedir)/cst-public-libraries-openthreads.git; git pull; cd "$(buildprefix)";); \
-	[ -d "$(archivedir)/cst-public-libraries-openthreads.git" ] || \
-	git clone --recursive git://c00lstreamtech.de/cst-public-libraries-openthreads.git $(archivedir)/cst-public-libraries-openthreads.git; \
-	cp -ra $(archivedir)/cst-public-libraries-openthreads.git $(buildprefix)/openthreads; \
-	cd @DIR_libopenthreads@ && \
-		rm CMakeFiles/* -rf CMakeCache.txt cmake_install.cmake && \
-		echo "# dummy file to prevent warning message" > $(buildprefix)/openthreads/examples/CMakeLists.txt; \
-		cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_NAME="Linux" \
+$(D)/libopenthreads: $(D)/bootstrap
+	$(REMOVE)/openthreads
+	set -e; if [ -d $(ARCHIVE)/library-openthreads.git ]; \
+		then cd $(ARCHIVE)/library-openthreads.git; git pull; \
+		else cd $(ARCHIVE); git clone --recursive git://github.com/tuxbox-neutrino/library-openthreads.git library-openthreads.git; \
+		fi
+	cp -ra $(ARCHIVE)/library-openthreads.git $(BUILD_TMP)/openthreads
+	set -e; cd $(BUILD_TMP)/openthreads; \
+		git submodule init; \
+		git submodule update; \
+		$(PATCH)/libopenthreads.patch; \
+		rm CMakeFiles/* -rf CMakeCache.txt cmake_install.cmake; \
+		echo "# dummy file to prevent warning message" > $(BUILD_TMP)/openthreads/examples/CMakeLists.txt; \
+		cmake . -DCMAKE_BUILD_TYPE=Release \
+			-DCMAKE_SYSTEM_NAME="Linux" \
 			-DCMAKE_INSTALL_PREFIX="" \
-			-DCMAKE_C_COMPILER="$(target)-gcc" \
-			-DCMAKE_CXX_COMPILER="$(target)-g++" \
-			-D_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS_EXITCODE=1 && \
-			find . -name cmake_install.cmake -print0 | xargs -0 \
-			sed -i 's@SET(CMAKE_INSTALL_PREFIX "/usr/local")@SET(CMAKE_INSTALL_PREFIX "")@' && \
-		$(MAKE) && \
-		@INSTALL_libopenthreads@
-	@CLEANUP_libopenthreads@
+			-DCMAKE_C_COMPILER="$(TARGET)-gcc" \
+			-DCMAKE_CXX_COMPILER="$(TARGET)-g++" \
+			-D_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS_EXITCODE=1 \
+		; \
+		find . -name cmake_install.cmake -print0 | xargs -0 \
+		sed -i 's@SET(CMAKE_INSTALL_PREFIX "/usr/local")@SET(CMAKE_INSTALL_PREFIX "")@'; \
+		$(MAKE); \
+		$(MAKE) install DESTDIR=$(TARGETPREFIX)/usr
+	$(REWRITE_PKGCONF) $(PKG_CONFIG_PATH)/openthreads.pc
+	$(REMOVE)/openthreads
 	touch $@
 
 #
