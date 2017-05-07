@@ -1,4 +1,4 @@
-URL3=http://archive.stlinux.com/stlinux/2.3/STLinux/sh4
+URL3=http://archive.stlinux.com/stlinux/2.3/STLinux/sh4 
 URL3U=http://archive.stlinux.com/stlinux/2.3/updates/RPMS/sh4
 URL4=http://archive.stlinux.com/stlinux/2.4/STLinux/sh4
 URL4U=http://archive.stlinux.com/stlinux/2.4/updates/RPMS/sh4
