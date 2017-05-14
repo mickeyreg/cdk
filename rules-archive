@@ -207,7 +207,7 @@ gst-plugin-subsink.git;git://github.com/christophecvr/gstreamer1.0-plugin-subsin
 #
 libtuxtxt.git;git://github.com/OpenPLi/tuxtxt.git
 enigma2-openpli-plugins-enigma2.git;git://github.com/OpenPLi/enigma2-plugins.git
-e2openplugin-OpenWebif.git;git://github.com/HDMU/e2openplugin-OpenWebif
+e2openplugin-OpenWebif.git;git://github.com/E2OpenPlugins/e2openplugin-OpenWebif.git
 hotplug-e2-helper.git;git://github.com/OpenPLi/hotplug-e2-helper.git
 libdreamdvd.git;git://github.com/mirakels/libdreamdvd
 
