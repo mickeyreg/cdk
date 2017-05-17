@@ -117,6 +117,14 @@ AC_ARG_ENABLE(p0217,
 AM_CONDITIONAL(ENABLE_P0217,test "$enable_p0217" = "yes")
 AC_SUBST(P0217)
 
+AC_ARG_ENABLE(n0217,
+	AS_HELP_STRING(--enable-n0217, set up the CDK to use the newest STLinux 2.6.32.71 with patchlevel 0217),
+	[case "${enableval}" in
+		yes) N0217=n0217 ;;
+	esac], [enable_n0217=no])
+AM_CONDITIONAL(ENABLE_N0217,test "$enable_n0217" = "yes")
+AC_SUBST(N0217)
+
 AC_ARG_WITH(cpu,
 	[  --with-cpu=MODEL    cpu model [[sh4]]],
 	[CPU_MODEL="$withval"],[CPU_MODEL="sh4"])
@@ -763,6 +771,13 @@ elif test "$enable_p0217" == "yes"; then
 	KERNELLABEL="217"
 	PATCH_STR="_0217"
 	KERNEL_DIR="linux-sh4-${VERSION_linuxp0217}"
+elif test "$enable_n0217" == "yes"; then
+	TUXBOX_RULES_MAKE(linuxn0217)
+	KERNELVERSION=${VERSION_linuxn0217}
+	KERNELSTMLABEL="_${VERSION_linuxn0217#*_}"
+	KERNELLABEL="217"
+	PATCH_STR="_0217"
+	KERNEL_DIR="linux-sh4-${VERSION_linuxn0217}"
 fi
 
 AC_SUBST(EXTERNALLCD_DEP)

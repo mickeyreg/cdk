@@ -22,6 +22,7 @@ linuxp0211;2.6.32.59_stm24_0211;linux-sh4-2.6.32.59_stm24_0211;
 linuxp0214;2.6.32.61_stm24_0214;linux-sh4-2.6.32.61_stm24_0214;
 linuxp0215;2.6.32.61_stm24_0215;linux-sh4-2.6.32.61_stm24_0215;
 linuxp0217;2.6.32.61_stm24_0217;linux-sh4-2.6.32.61_stm24_0217;
+linuxn0217;2.6.32.71_stm24_0217;linux-sh4-2.6.32.71_stm24_0217;
 ipkg_utils;050831;ipkg-utils-050831;ipkg-utils-050831.tar.gz;extract:ipkg-utils-050831.tar.gz;patch:ipkg-utils.patch
 ipkg_host;0.99.163;ipkg-host;ipkg-0.99.163.tar.gz:ipkg-host.patch;dirextract:ipkg-0.99.163.tar.gz;patch:ipkg-host.patch
 ccache;3.1.9;ccache-3.1.9;ccache-3.1.9.tar.gz;extract:ccache-3.1.9.tar.gz

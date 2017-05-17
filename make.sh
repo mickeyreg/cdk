@@ -177,6 +177,7 @@ case $2 in
 		echo "   3) STM 24 P0214 (outdated)"
 		echo "   4) STM 24 P0215"
 		echo "   5) STM 24 P0217 (recommended)"
+		echo "   6) STM 24 P0217 (newest)"
 		read -p "Select kernel (1-5)? ";;
 esac
 
@@ -186,6 +187,7 @@ case "$REPLY" in
 	3)  KERNEL="--enable-p0214";;
 	4)  KERNEL="--enable-p0215";;
 	5)  KERNEL="--enable-p0217";;
+	6)  KERNEL="--enable-n0217";;
 	*)  KERNEL="--enable-p0217";;
 esac
 CONFIGPARAM="$CONFIGPARAM $KERNEL"

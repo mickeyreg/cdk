@@ -91,7 +91,8 @@ ${DIALOG} --menu "\n Select Kernel: \n " $height $width $listheight \
 2	"STM 24 P0211" \
 3	"STM 24 P0214" \
 4	"STM 24 P0215" \
-4	"STM 24 P0217 (recommended)" \
+5	"STM 24 P0217 (recommended)" \
+6	"STM 24 P0217 (newest)" \
 2> ${tempfile}
 
 opt=${?}
